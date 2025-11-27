@@ -22,12 +22,12 @@ export function RiskView() {
   const [compoundProfits, setCompoundProfits] = useState(true);
 
   useEffect(() => {
-    if (settings) {
-      setRiskPerTrade(parseFloat(settings.riskPerTrade));
-      setMaxLeverage(settings.maxLeverage);
-      setMaxDailyDrawdown(settings.maxDailyDrawdown);
-      setDailyProfitTarget(settings.dailyProfitTarget);
-      setCompoundProfits(settings.compoundProfits);
+    if (settings && Object.keys(settings).length > 0) {
+      setRiskPerTrade(parseFloat(settings.riskPerTrade || "2.0"));
+      setMaxLeverage(settings.maxLeverage || 10);
+      setMaxDailyDrawdown(settings.maxDailyDrawdown || "5.0");
+      setDailyProfitTarget(settings.dailyProfitTarget || "2.0");
+      setCompoundProfits(settings.compoundProfits ?? true);
     }
   }, [settings]);
 

@@ -4,14 +4,10 @@ import { storage } from "./storage";
 import { insertSignalSchema, insertStrategySchema, insertSettingsSchema, insertBalanceHistorySchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 
-const DEMO_USER_ID = "demo-user-001";
+let DEMO_USER_ID: string;
 
 async function ensureDemoUser() {
-  let user = await storage.getUser(DEMO_USER_ID);
-  
-  if (!user) {
-    user = await storage.getUserByUsername("Trader_01");
-  }
+  let user = await storage.getUserByUsername("Trader_01");
   
   if (!user) {
     user = await storage.createUser({
@@ -21,6 +17,8 @@ async function ensureDemoUser() {
       balance: "110.30",
     });
   }
+  
+  DEMO_USER_ID = user.id;
   
   const existingSettings = await storage.getSettings(user.id);
   if (!existingSettings) {
