@@ -2,6 +2,9 @@ import { useState } from "react";
 import { BotTerminal } from "@/components/bot-terminal";
 import { PerformanceChart } from "@/components/performance-chart";
 import { SignalCard } from "@/components/signal-card";
+import { StrategiesView } from "@/components/views/strategies-view";
+import { RiskView } from "@/components/views/risk-view";
+import { SettingsView } from "@/components/views/settings-view";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu } from "lucide-react";
@@ -39,6 +42,41 @@ const MOCK_SIGNALS = [
     status: "completed" as const
   }
 ];
+
+function DashboardHome() {
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Top Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 h-[350px]">
+          <PerformanceChart />
+        </div>
+        <div className="h-[350px]">
+          <BotTerminal />
+        </div>
+      </div>
+
+      {/* Signals Feed */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <Zap className="h-5 w-5 text-primary" />
+            Active Signals
+          </h2>
+          <Badge variant="outline" className="font-mono text-xs">
+            AUTO-TRADING: ON
+          </Badge>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {MOCK_SIGNALS.map((signal, i) => (
+            <SignalCard key={i} signal={signal} index={i} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -95,7 +133,12 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto grid-bg">
         <header className="h-16 border-b border-border/50 bg-background/80 backdrop-blur-md sticky top-0 z-10 px-6 flex items-center justify-between">
-          <h1 className="text-xl font-bold font-sans tracking-tight">Mission Control</h1>
+          <h1 className="text-xl font-bold font-sans tracking-tight">
+            {activeTab === 'dashboard' && 'Mission Control'}
+            {activeTab === 'strategy' && 'Strategy Lab'}
+            {activeTab === 'risk' && 'Risk Management'}
+            {activeTab === 'settings' && 'System Config'}
+          </h1>
           <div className="flex items-center gap-6">
             <div className="text-right">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Daily Goal</p>
@@ -110,34 +153,10 @@ export default function Dashboard() {
         </header>
 
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
-          {/* Top Stats Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 h-[350px]">
-              <PerformanceChart />
-            </div>
-            <div className="h-[350px]">
-              <BotTerminal />
-            </div>
-          </div>
-
-          {/* Signals Feed */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold flex items-center gap-2">
-                <Zap className="h-5 w-5 text-primary" />
-                Active Signals
-              </h2>
-              <Badge variant="outline" className="font-mono text-xs">
-                AUTO-TRADING: ON
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {MOCK_SIGNALS.map((signal, i) => (
-                <SignalCard key={i} signal={signal} index={i} />
-              ))}
-            </div>
-          </div>
+          {activeTab === 'dashboard' && <DashboardHome />}
+          {activeTab === 'strategy' && <StrategiesView />}
+          {activeTab === 'risk' && <RiskView />}
+          {activeTab === 'settings' && <SettingsView />}
           
           {/* Decorative Footer */}
           <div className="flex justify-center py-10 opacity-50">
