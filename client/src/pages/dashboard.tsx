@@ -7,43 +7,16 @@ import { RiskView } from "@/components/views/risk-view";
 import { SettingsView } from "@/components/views/settings-view";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu } from "lucide-react";
 import coreImage from "@assets/generated_images/futuristic_ai_trading_bot_core_logo.png";
-
-const MOCK_SIGNALS = [
-  {
-    pair: "BTC/USDT",
-    type: "LONG" as const,
-    entry: "94,250.00",
-    tp: "95,100.00",
-    sl: "93,800.00",
-    confidence: 92,
-    time: "2m ago",
-    status: "active" as const
-  },
-  {
-    pair: "ETH/USDT",
-    type: "SHORT" as const,
-    entry: "3,450.50",
-    tp: "3,380.00",
-    sl: "3,490.00",
-    confidence: 88,
-    time: "15m ago",
-    status: "active" as const
-  },
-  {
-    pair: "SOL/USDT",
-    type: "LONG" as const,
-    entry: "142.20",
-    tp: "145.00",
-    sl: "140.50",
-    confidence: 85,
-    time: "1h ago",
-    status: "completed" as const
-  }
-];
+import { useSignals, useSettings, useUser } from "@/hooks/use-api";
+import { formatDistanceToNow } from "date-fns";
 
 function DashboardHome() {
+  const { data: signals, isLoading: signalsLoading } = useSignals();
+  const { data: settings } = useSettings();
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Top Stats Row */}
@@ -64,15 +37,30 @@ function DashboardHome() {
             Active Signals
           </h2>
           <Badge variant="outline" className="font-mono text-xs">
-            AUTO-TRADING: ON
+            AUTO-TRADING: {settings?.autoTrading ? "ON" : "OFF"}
           </Badge>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MOCK_SIGNALS.map((signal, i) => (
-            <SignalCard key={i} signal={signal} index={i} />
-          ))}
-        </div>
+        {signalsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {signals?.map((signal, i) => (
+              <SignalCard 
+                key={signal.id} 
+                signal={{
+                  ...signal,
+                  time: formatDistanceToNow(new Date(signal.createdAt), { addSuffix: true })
+                }} 
+                index={i} 
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -80,6 +68,12 @@ function DashboardHome() {
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { data: user } = useUser();
+  const { data: settings } = useSettings();
+
+  const currentBalance = parseFloat(user?.balance || "100");
+  const dailyTarget = parseFloat(settings?.dailyProfitTarget || "2.0");
+  const currentGain = ((currentBalance - 100) / 100 * 100);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
@@ -106,6 +100,7 @@ export default function Dashboard() {
               variant={activeTab === item.id ? "secondary" : "ghost"}
               className={`w-full justify-start gap-3 ${activeTab === item.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
               onClick={() => setActiveTab(item.id)}
+              data-testid={`nav-${item.id}`}
             >
               <item.icon className="h-5 w-5" />
               <span className="hidden lg:block">{item.label}</span>
@@ -119,7 +114,7 @@ export default function Dashboard() {
                 {/* Avatar Placeholder */}
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-medium truncate">Trader_01</p>
+              <p className="text-sm font-medium truncate">{user?.username || "Trader_01"}</p>
               <p className="text-xs text-muted-foreground truncate">Pro Plan Active</p>
             </div>
           </div>
@@ -142,12 +137,12 @@ export default function Dashboard() {
           <div className="flex items-center gap-6">
             <div className="text-right">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Daily Goal</p>
-              <p className="text-sm font-mono font-bold text-primary">1.5% / 2.0%</p>
+              <p className="text-sm font-mono font-bold text-primary">{currentGain.toFixed(1)}% / {dailyTarget}%</p>
             </div>
             <div className="h-8 w-[1px] bg-border" />
             <div className="text-right">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Balance</p>
-              <p className="text-lg font-mono font-bold text-foreground">$110.30</p>
+              <p className="text-lg font-mono font-bold text-foreground" data-testid="balance-display">${currentBalance.toFixed(2)}</p>
             </div>
           </div>
         </header>

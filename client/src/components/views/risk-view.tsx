@@ -4,9 +4,61 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ShieldAlert, AlertTriangle, Lock } from "lucide-react";
+import { useSettings, useUpdateSettings } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 export function RiskView() {
+  const { data: settings, isLoading } = useSettings();
+  const updateSettings = useUpdateSettings();
+  const { toast } = useToast();
+
+  const [riskPerTrade, setRiskPerTrade] = useState(2.0);
+  const [maxLeverage, setMaxLeverage] = useState(10);
+  const [maxDailyDrawdown, setMaxDailyDrawdown] = useState("5.0");
+  const [dailyProfitTarget, setDailyProfitTarget] = useState("2.0");
+  const [compoundProfits, setCompoundProfits] = useState(true);
+
+  useEffect(() => {
+    if (settings) {
+      setRiskPerTrade(parseFloat(settings.riskPerTrade));
+      setMaxLeverage(settings.maxLeverage);
+      setMaxDailyDrawdown(settings.maxDailyDrawdown);
+      setDailyProfitTarget(settings.dailyProfitTarget);
+      setCompoundProfits(settings.compoundProfits);
+    }
+  }, [settings]);
+
+  const handleUpdate = async (updates: any) => {
+    try {
+      await updateSettings.mutateAsync(updates);
+      toast({
+        title: "Settings Updated",
+        description: "Risk management settings have been saved.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update settings",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-20 w-full" />
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-80 w-full" />
+          <Skeleton className="h-80 w-full" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center justify-between">
@@ -29,18 +81,31 @@ export function RiskView() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label>Risk Per Trade</Label>
-                <span className="font-mono text-primary font-bold">2.0%</span>
+                <span className="font-mono text-primary font-bold">{riskPerTrade.toFixed(1)}%</span>
               </div>
-              <Slider defaultValue={[2]} max={5} step={0.5} className="[&>.absolute]:bg-primary" />
+              <Slider 
+                value={[riskPerTrade]} 
+                onValueChange={(value) => setRiskPerTrade(value[0])}
+                onValueCommit={(value) => handleUpdate({ riskPerTrade: value[0].toString() })}
+                max={5} 
+                step={0.5} 
+                className="[&>.absolute]:bg-primary" 
+              />
               <p className="text-xs text-muted-foreground">Recommended: 1-2% for small accounts.</p>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label>Max Leverage</Label>
-                <span className="font-mono text-primary font-bold">10x</span>
+                <span className="font-mono text-primary font-bold">{maxLeverage}x</span>
               </div>
-              <Slider defaultValue={[10]} max={50} step={1} />
+              <Slider 
+                value={[maxLeverage]} 
+                onValueChange={(value) => setMaxLeverage(value[0])}
+                onValueCommit={(value) => handleUpdate({ maxLeverage: value[0] })}
+                max={50} 
+                step={1} 
+              />
               <p className="text-xs text-muted-foreground">Warning: Higher leverage increases liquidation risk.</p>
             </div>
           </CardContent>
@@ -59,7 +124,12 @@ export function RiskView() {
               <div className="flex items-center justify-between">
                 <Label>Max Daily Drawdown</Label>
                 <div className="flex items-center gap-2">
-                  <Input className="w-20 h-8 font-mono text-right" defaultValue="5.0" />
+                  <Input 
+                    className="w-20 h-8 font-mono text-right" 
+                    value={maxDailyDrawdown}
+                    onChange={(e) => setMaxDailyDrawdown(e.target.value)}
+                    onBlur={() => handleUpdate({ maxDailyDrawdown })}
+                  />
                   <span className="text-muted-foreground">%</span>
                 </div>
               </div>
@@ -69,7 +139,12 @@ export function RiskView() {
               <div className="flex items-center justify-between">
                 <Label>Take Profit Target (Daily)</Label>
                 <div className="flex items-center gap-2">
-                  <Input className="w-20 h-8 font-mono text-right" defaultValue="2.0" />
+                  <Input 
+                    className="w-20 h-8 font-mono text-right" 
+                    value={dailyProfitTarget}
+                    onChange={(e) => setDailyProfitTarget(e.target.value)}
+                    onBlur={() => handleUpdate({ dailyProfitTarget })}
+                  />
                   <span className="text-muted-foreground">%</span>
                 </div>
               </div>
@@ -95,7 +170,13 @@ export function RiskView() {
                         <Label className="text-base">Compound Profits</Label>
                         <p className="text-sm text-muted-foreground">Re-invest daily profits into the trading balance automatically.</p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={compoundProfits} 
+                      onCheckedChange={(checked) => {
+                        setCompoundProfits(checked);
+                        handleUpdate({ compoundProfits: checked });
+                      }}
+                    />
                 </div>
             </CardContent>
         </Card>

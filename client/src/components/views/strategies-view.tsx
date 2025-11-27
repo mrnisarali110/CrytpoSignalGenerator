@@ -3,42 +3,45 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Activity, TrendingUp, Clock, AlertCircle } from "lucide-react";
-
-const STRATEGIES = [
-  {
-    id: "scalp-v2",
-    name: "Micro-Scalp v2",
-    description: "High-frequency signals for small price movements. Best for volatile markets.",
-    risk: "High",
-    winRate: 78,
-    avgProfit: 1.2,
-    active: true,
-    metrics: { trades: 142, profitFactor: 2.1, drawdown: 4.5 }
-  },
-  {
-    id: "trend-master",
-    name: "Trend Master",
-    description: "Follows major 4H market trends. Fewer trades, higher reliability.",
-    risk: "Low",
-    winRate: 85,
-    avgProfit: 3.5,
-    active: true,
-    metrics: { trades: 24, profitFactor: 3.8, drawdown: 1.2 }
-  },
-  {
-    id: "sentiment-ai",
-    name: "Sentiment AI",
-    description: "Experimental strategy based on social volume and news sentiment.",
-    risk: "Med",
-    winRate: 62,
-    avgProfit: 5.1,
-    active: false,
-    metrics: { trades: 12, profitFactor: 1.5, drawdown: 8.2 }
-  }
-];
+import { useStrategies, useUpdateStrategy } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
 
 export function StrategiesView() {
+  const { data: strategies, isLoading } = useStrategies();
+  const updateStrategy = useUpdateStrategy();
+  const { toast } = useToast();
+
+  const handleToggle = async (id: string, currentActive: boolean) => {
+    try {
+      await updateStrategy.mutateAsync({
+        id,
+        updates: { active: !currentActive }
+      });
+      toast({
+        title: currentActive ? "Strategy Paused" : "Strategy Activated",
+        description: `Strategy has been ${currentActive ? 'paused' : 'activated'} successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update strategy",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center justify-between">
@@ -53,7 +56,7 @@ export function StrategiesView() {
       </div>
 
       <div className="grid gap-6">
-        {STRATEGIES.map((strategy) => (
+        {strategies?.map((strategy) => (
           <Card key={strategy.id} className={`border-l-4 ${strategy.active ? 'border-l-primary bg-card/50' : 'border-l-muted bg-card/20'} backdrop-blur-sm transition-all`}>
             <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
               <div className="space-y-1">
@@ -77,7 +80,10 @@ export function StrategiesView() {
                   <div className="text-sm font-medium text-muted-foreground">Win Rate</div>
                   <div className="text-2xl font-bold font-mono text-primary">{strategy.winRate}%</div>
                 </div>
-                <Switch checked={strategy.active} />
+                <Switch 
+                  checked={strategy.active} 
+                  onCheckedChange={() => handleToggle(strategy.id, strategy.active)}
+                />
               </div>
             </CardHeader>
             <CardContent>
@@ -87,27 +93,27 @@ export function StrategiesView() {
                     <span className="text-muted-foreground flex items-center gap-2">
                       <TrendingUp className="h-4 w-4" /> Profit Factor
                     </span>
-                    <span className="font-mono font-bold">{strategy.metrics.profitFactor}</span>
+                    <span className="font-mono font-bold">{strategy.profitFactor}</span>
                   </div>
-                  <Progress value={strategy.metrics.profitFactor * 20} className="h-1" />
+                  <Progress value={parseFloat(strategy.profitFactor) * 20} className="h-1" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground flex items-center gap-2">
                       <Clock className="h-4 w-4" /> Total Trades
                     </span>
-                    <span className="font-mono font-bold">{strategy.metrics.trades}</span>
+                    <span className="font-mono font-bold">{strategy.totalTrades}</span>
                   </div>
-                  <Progress value={strategy.metrics.trades / 2} className="h-1" />
+                  <Progress value={strategy.totalTrades / 2} className="h-1" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground flex items-center gap-2">
                       <AlertCircle className="h-4 w-4" /> Max Drawdown
                     </span>
-                    <span className="font-mono font-bold text-red-400">{strategy.metrics.drawdown}%</span>
+                    <span className="font-mono font-bold text-red-400">{strategy.maxDrawdown}%</span>
                   </div>
-                  <Progress value={strategy.metrics.drawdown * 5} className="h-1 bg-red-950" />
+                  <Progress value={parseFloat(strategy.maxDrawdown) * 5} className="h-1 bg-red-950" />
                 </div>
               </div>
             </CardContent>

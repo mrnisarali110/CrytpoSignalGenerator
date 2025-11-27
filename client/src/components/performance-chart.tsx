@@ -1,18 +1,34 @@
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-const data = [
-  { day: "Day 1", balance: 100 },
-  { day: "Day 2", balance: 101.5 },
-  { day: "Day 3", balance: 103.2 },
-  { day: "Day 4", balance: 104.8 },
-  { day: "Day 5", balance: 106.5 },
-  { day: "Day 6", balance: 108.1 },
-  { day: "Day 7", balance: 110.3 },
-];
+import { useBalanceHistory } from "@/hooks/use-api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function PerformanceChart() {
+  const { data: history, isLoading } = useBalanceHistory();
+
+  if (isLoading) {
+    return (
+      <Card className="h-full bg-card/50 backdrop-blur-sm border-primary/20">
+        <CardHeader className="pb-2">
+          <Skeleton className="h-6 w-48" />
+        </CardHeader>
+        <CardContent className="h-[300px] flex items-center justify-center">
+          <Skeleton className="h-full w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const data = history?.map((h, i) => ({
+    day: `Day ${i + 1}`,
+    balance: parseFloat(h.balance),
+  })) || [];
+
+  const firstBalance = data[0]?.balance || 100;
+  const lastBalance = data[data.length - 1]?.balance || 100;
+  const totalGain = ((lastBalance - firstBalance) / firstBalance * 100).toFixed(1);
+
   return (
     <Card className="h-full bg-card/50 backdrop-blur-sm border-primary/20">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -20,7 +36,7 @@ export function PerformanceChart() {
           Account Growth Protocol
         </CardTitle>
         <Badge variant="outline" className="bg-primary/10 text-primary border-primary/50 animate-pulse">
-          +10.3% TOTAL
+          +{totalGain}% TOTAL
         </Badge>
       </CardHeader>
       <CardContent className="h-[300px]">
