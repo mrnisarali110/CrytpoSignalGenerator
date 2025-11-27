@@ -8,6 +8,11 @@ const DEMO_USER_ID = "demo-user-001";
 
 async function ensureDemoUser() {
   let user = await storage.getUser(DEMO_USER_ID);
+  
+  if (!user) {
+    user = await storage.getUserByUsername("Trader_01");
+  }
+  
   if (!user) {
     user = await storage.createUser({
       username: "Trader_01",
@@ -15,7 +20,10 @@ async function ensureDemoUser() {
       email: "demo@signalbot.ai",
       balance: "110.30",
     });
-    
+  }
+  
+  const existingSettings = await storage.getSettings(user.id);
+  if (!existingSettings) {
     await storage.createSettings({
       userId: user.id,
       riskPerTrade: "2.0",
@@ -25,7 +33,10 @@ async function ensureDemoUser() {
       compoundProfits: true,
       autoTrading: true,
     });
+  }
 
+  const existingStrategies = await storage.getStrategies(user.id);
+  if (existingStrategies.length === 0) {
     const strategiesData = [
       {
         userId: user.id,
@@ -68,7 +79,10 @@ async function ensureDemoUser() {
     for (const strategy of strategiesData) {
       await storage.createStrategy(strategy);
     }
+  }
 
+  const existingHistory = await storage.getBalanceHistory(user.id, 1);
+  if (existingHistory.length === 0) {
     for (let i = 0; i < 7; i++) {
       const balance = 100 + (i * 1.5);
       await storage.addBalanceHistory({
@@ -76,7 +90,10 @@ async function ensureDemoUser() {
         balance: balance.toFixed(2),
       });
     }
+  }
 
+  const existingSignals = await storage.getSignals(user.id, 1);
+  if (existingSignals.length === 0) {
     const signalsData = [
       {
         userId: user.id,
@@ -117,6 +134,7 @@ async function ensureDemoUser() {
       await storage.createSignal(signal);
     }
   }
+  
   return user;
 }
 
