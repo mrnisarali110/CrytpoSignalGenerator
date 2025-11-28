@@ -6,7 +6,7 @@ import { fromZodError } from "zod-validation-error";
 import { analyzeSignal } from "./strategy-macd";
 import { simulateStrategyBacktest } from "./backtest";
 
-let req.session?.userId || DEMO_USER_ID: string;
+let DEMO_USER_ID: string;
 
 // Middleware to check if user is authenticated
 function requireAuth(req: Request, res: Response, next: any) {
@@ -30,7 +30,7 @@ async function ensureDemoUser() {
     });
   }
   
-  req.session?.userId || DEMO_USER_ID = user.id;
+  DEMO_USER_ID = user.id;
   
   const existingSettings = await storage.getSettings(user.id);
   if (!existingSettings) {
@@ -246,7 +246,7 @@ export async function registerRoutes(
 
   app.get("/api/signals", async (req, res) => {
     try {
-      const userId = req.session?.userId || req.session?.userId || DEMO_USER_ID;
+      const userId = req.session?.userId || DEMO_USER_ID;
       const signals = await storage.getSignals(userId, 20);
       res.json(signals);
     } catch (error: any) {
@@ -256,7 +256,7 @@ export async function registerRoutes(
 
   app.post("/api/signals", async (req, res) => {
     try {
-      const userId = req.session?.userId || req.session?.userId || DEMO_USER_ID;
+      const userId = req.session?.userId || DEMO_USER_ID;
       const result = insertSignalSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: fromZodError(result.error).message });
