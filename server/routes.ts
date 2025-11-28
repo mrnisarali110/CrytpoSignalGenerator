@@ -369,6 +369,24 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/user/balance", async (req, res) => {
+    try {
+      const { balance } = req.body;
+      if (!balance || parseFloat(balance) <= 0) {
+        return res.status(400).json({ error: "Invalid balance" });
+      }
+      await storage.updateUserBalance(DEMO_USER_ID, balance.toString());
+      await storage.addBalanceHistory({
+        userId: DEMO_USER_ID,
+        balance: balance.toString(),
+      });
+      const user = await storage.getUser(DEMO_USER_ID);
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/trade/execute", async (req, res) => {
     try {
       const { signalId, result, confidence } = req.body;

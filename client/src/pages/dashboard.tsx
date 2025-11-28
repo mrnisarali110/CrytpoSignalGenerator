@@ -10,9 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu, RotateCw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu, RotateCw, Edit2 } from "lucide-react";
 import coreImage from "@assets/generated_images/futuristic_ai_trading_bot_core_logo.png";
-import { useSignals, useSettings, useUser, useStrategies } from "@/hooks/use-api";
+import { useSignals, useSettings, useUser, useStrategies, useUpdateSettings } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
@@ -181,12 +183,68 @@ function DashboardHome() {
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const { data: user } = useUser();
+  const { data: user, refetch: refetchUser } = useUser();
   const { data: settings } = useSettings();
+  const updateSettings = useUpdateSettings();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const [editOpen, setEditOpen] = useState(false);
+  const [editBalance, setEditBalance] = useState("");
+  const [editDailyGoal, setEditDailyGoal] = useState("");
 
   const currentBalance = parseFloat(user?.balance || "100");
   const dailyTarget = parseFloat(settings?.dailyProfitTarget || "2.0");
   const currentGain = ((currentBalance - 100) / 100 * 100);
+
+  const handleEditOpen = () => {
+    setEditBalance(currentBalance.toString());
+    setEditDailyGoal(dailyTarget.toString());
+    setEditOpen(true);
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      const newBalance = parseFloat(editBalance);
+      const newDailyGoal = parseFloat(editDailyGoal);
+
+      if (newBalance <= 0 || newDailyGoal <= 0) {
+        toast({
+          title: "Invalid Input",
+          description: "Balance and daily goal must be greater than 0",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update balance via API
+      const res = await fetch("/api/user/balance", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ balance: newBalance.toFixed(2) }),
+      });
+      if (!res.ok) throw new Error("Failed to update balance");
+
+      // Update daily goal
+      await updateSettings.mutateAsync({ dailyProfitTarget: newDailyGoal.toString() });
+
+      // Refetch to get updated data
+      await refetchUser();
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+
+      toast({
+        title: "Updated",
+        description: `Balance: $${newBalance.toFixed(2)} | Daily Goal: ${newDailyGoal}%`,
+      });
+      setEditOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save changes",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
@@ -257,6 +315,63 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Balance</p>
               <p className="text-lg font-mono font-bold text-foreground" data-testid="balance-display">${currentBalance.toFixed(2)}</p>
             </div>
+            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleEditOpen}
+                  className="text-primary hover:bg-primary/10"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Edit Account Settings</DialogTitle>
+                  <DialogDescription>Update your balance and daily profit goal.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Total Balance ($)</label>
+                    <Input
+                      type="number"
+                      value={editBalance}
+                      onChange={(e) => setEditBalance(e.target.value)}
+                      className="font-mono"
+                      step="0.01"
+                      min="1"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Daily Profit Goal (%)</label>
+                    <Input
+                      type="number"
+                      value={editDailyGoal}
+                      onChange={(e) => setEditDailyGoal(e.target.value)}
+                      className="font-mono"
+                      step="0.1"
+                      min="0.1"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <Button 
+                      onClick={handleSaveChanges}
+                      className="flex-1 bg-primary hover:bg-primary/90"
+                    >
+                      Save Changes
+                    </Button>
+                    <Button 
+                      onClick={() => setEditOpen(false)}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </header>
 
