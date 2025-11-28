@@ -98,7 +98,6 @@ function DashboardHome() {
                 index={i}
                 onTradeComplete={() => {
                   refetchSignals();
-                  setTimeout(() => window.location.reload(), 500);
                 }}
               />
             ))}
@@ -169,7 +168,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto grid-bg">
+      <main className="flex-1 overflow-y-auto grid-bg scroll-smooth">
         <header className="h-16 border-b border-border/50 bg-background/80 backdrop-blur-md sticky top-0 z-10 px-6 flex items-center justify-between">
           <h1 className="text-xl font-bold font-sans tracking-tight">
             {activeTab === 'dashboard' && 'Mission Control'}
