@@ -411,5 +411,30 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/strategies/backtest", async (req, res) => {
+    try {
+      const strategies = await storage.getStrategies(DEMO_USER_ID);
+      const results = [];
+
+      for (const strategy of strategies) {
+        // Simulate backtest with random improvement to win rate
+        const improvement = Math.floor(Math.random() * 5) - 2; // -2 to +3%
+        const newWinRate = Math.max(50, Math.min(95, strategy.winRate + improvement));
+        
+        await storage.updateStrategy(strategy.id, {
+          winRate: newWinRate,
+          totalTrades: strategy.totalTrades + Math.floor(Math.random() * 10) + 5,
+          profitFactor: ((newWinRate / 100) * 3).toFixed(2),
+        });
+
+        results.push({ id: strategy.id, winRate: newWinRate });
+      }
+
+      res.json({ success: true, count: strategies.length, results });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
