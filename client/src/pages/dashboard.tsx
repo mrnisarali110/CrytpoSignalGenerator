@@ -262,8 +262,10 @@ export default function Dashboard() {
         description: "See you next time!",
       });
 
-      // Redirect to login page
-      navigate("/login");
+      // Full page reload to reset auth state and redirect to login
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 500);
     } catch (error: any) {
       toast({
         title: "Error",
