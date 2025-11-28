@@ -169,6 +169,41 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/signals/generate", async (req, res) => {
+    try {
+      const pairs = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "ADA/USDT"];
+      const types = ["LONG", "SHORT"];
+      
+      const randomPair = pairs[Math.floor(Math.random() * pairs.length)];
+      const randomType = types[Math.floor(Math.random() * types.length)];
+      const basePrice = Math.floor(Math.random() * 50000) + 1000;
+      const entry = basePrice + (Math.random() * 100 - 50);
+      const tp = randomType === "LONG" 
+        ? entry * (1 + (Math.random() * 0.05 + 0.01))
+        : entry * (1 - (Math.random() * 0.05 + 0.01));
+      const sl = randomType === "LONG"
+        ? entry * (1 - (Math.random() * 0.03 + 0.005))
+        : entry * (1 + (Math.random() * 0.03 + 0.005));
+      const confidence = Math.floor(Math.random() * 30) + 65;
+      
+      const signal = await storage.createSignal({
+        userId: DEMO_USER_ID,
+        strategyId: null,
+        pair: randomPair,
+        type: randomType,
+        entry: entry.toFixed(2),
+        tp: tp.toFixed(2),
+        sl: sl.toFixed(2),
+        confidence,
+        status: "active",
+      });
+      
+      res.json(signal);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.patch("/api/signals/:id", async (req, res) => {
     try {
       const { id } = req.params;

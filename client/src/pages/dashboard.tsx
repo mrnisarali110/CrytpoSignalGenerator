@@ -11,11 +11,30 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu, RotateCw } from "lucide-react";
 import coreImage from "@assets/generated_images/futuristic_ai_trading_bot_core_logo.png";
 import { useSignals, useSettings, useUser } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
 function DashboardHome() {
   const { data: signals, isLoading: signalsLoading, refetch: refetchSignals, isFetching } = useSignals();
   const { data: settings } = useSettings();
+  const { toast } = useToast();
+
+  const handleRefresh = async () => {
+    try {
+      await fetch("/api/signals/generate", { method: "POST" });
+      await refetchSignals();
+      toast({
+        title: "Signals Refreshed",
+        description: "New trading signals have been generated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate new signals",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -40,13 +59,13 @@ function DashboardHome() {
             <Button 
               size="sm" 
               variant="outline"
-              onClick={() => refetchSignals()}
+              onClick={handleRefresh}
               disabled={isFetching}
               className="border-primary/50 text-primary hover:bg-primary/10"
               data-testid="button-refresh-signals"
             >
               <RotateCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline ml-2">Refresh</span>
+              <span className="hidden sm:inline ml-2">Generate New</span>
             </Button>
             <Badge variant="outline" className="font-mono text-xs">
               AUTO-TRADING: {settings?.autoTrading ? "ON" : "OFF"}
@@ -67,6 +86,7 @@ function DashboardHome() {
                 key={signal.id} 
                 signal={{
                   ...signal,
+                  type: signal.type as "LONG" | "SHORT",
                   time: formatDistanceToNow(new Date(signal.createdAt), { addSuffix: true })
                 }} 
                 index={i} 
