@@ -358,21 +358,97 @@ export async function registerRoutes(
         "PEPE/USDT": "pepe"
       };
       
-      const pairs = Object.keys(cryptoMap);
-      const randomPair = pairs[Math.floor(Math.random() * pairs.length)];
-      const cryptoId = cryptoMap[randomPair];
+      let selectedStrategy = null;
+      if (strategyId) {
+        const strategies = await storage.getStrategies(req.session?.userId || DEMO_USER_ID);
+        selectedStrategy = strategies.find(s => s.id === strategyId);
+      }
       
       try {
+        // Fetch 24h market data for all coins to score profitability
+        const cryptoIds = Object.values(cryptoMap).join(",");
+        const marketData = await fetchWithRetry(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoIds}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`
+        );
+        
+        // Score coins based on volatility, momentum, and market cap
+        const coinScores: { pair: string; cryptoId: string; score: number; change24h: number }[] = [];
+        
+        for (const [pair, cryptoId] of Object.entries(cryptoMap)) {
+          const data = marketData[cryptoId];
+          if (!data || !data.usd) continue;
+          
+          const change24h = data.usd_24h_change || 0;
+          const volatility = Math.abs(change24h);
+          const marketCap = data.usd_market_cap || 0;
+          
+          // Profitability scoring: higher volatility + healthy market cap + positive momentum
+          let score = 50; // base score
+          
+          // Add volatility bonus (more movement = more profit opportunity)
+          if (volatility > 3) score += 30;
+          else if (volatility > 1.5) score += 20;
+          else if (volatility > 0.5) score += 10;
+          
+          // Add momentum bonus (uptrend = easier wins)
+          if (change24h > 2) score += 25;
+          else if (change24h > 0) score += 15;
+          else if (change24h > -2) score += 5;
+          
+          // Market cap health (avoid coins with very low cap)
+          if (marketCap > 1000000000) score += 20; // >1B market cap
+          else if (marketCap > 100000000) score += 10; // >100M market cap
+          
+          coinScores.push({ pair, cryptoId, score, change24h });
+        }
+        
+        // Sort by score (highest first)
+        coinScores.sort((a, b) => b.score - a.score);
+        
+        // Select coin based on strategy risk profile
+        let selectedCoin;
+        if (selectedStrategy) {
+          const risk = selectedStrategy.risk;
+          if (risk === "High") {
+            // Micro-Scalp v2: Pick from TOP coins with highest volatility (more movement)
+            const topVolatile = coinScores.filter((c, i) => i < 5); // top 5 most profitable
+            selectedCoin = topVolatile[Math.floor(Math.random() * topVolatile.length)];
+          } else if (risk === "Low") {
+            // Trend Master: Pick from STABLE coins with consistent uptrend (lower volatility, positive momentum)
+            const stableTrending = coinScores.filter(c => 
+              Math.abs(c.change24h) < 2 && c.score > 60
+            );
+            selectedCoin = stableTrending.length > 0 
+              ? stableTrending[Math.floor(Math.random() * stableTrending.length)]
+              : coinScores[Math.floor(Math.random() * Math.min(3, coinScores.length))]; // fallback to top 3
+          } else {
+            // Sentiment AI (Med Risk): Pick from MEDIUM volatility coins
+            const mediumVolatile = coinScores.filter(c => 
+              Math.abs(c.change24h) >= 1 && Math.abs(c.change24h) <= 3 && c.score > 50
+            );
+            selectedCoin = mediumVolatile.length > 0 
+              ? mediumVolatile[Math.floor(Math.random() * mediumVolatile.length)]
+              : coinScores[Math.floor(Math.random() * Math.min(5, coinScores.length))]; // fallback to top 5
+          }
+        } else {
+          // No strategy: pick from top profitable coins
+          selectedCoin = coinScores[Math.floor(Math.random() * Math.min(5, coinScores.length))];
+        }
+        
+        if (!selectedCoin) {
+          return res.status(500).json({ error: "No suitable coins found for strategy" });
+        }
+        
         // Fetch live price with retry
         const priceData = await fetchWithRetry(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd`
+          `https://api.coingecko.com/api/v3/simple/price?ids=${selectedCoin.cryptoId}&vs_currencies=usd`
         );
-        const livePrice = priceData[cryptoId]?.usd;
+        const livePrice = priceData[selectedCoin.cryptoId]?.usd;
         if (!livePrice) throw new Error("Price not found");
 
         // Fetch historical data (last 90 days) with retry
         const histData = await fetchWithRetry(
-          `https://api.coingecko.com/api/v3/coins/${cryptoId}/market_chart?vs_currency=usd&days=90&interval=daily`
+          `https://api.coingecko.com/api/v3/coins/${selectedCoin.cryptoId}/market_chart?vs_currency=usd&days=90&interval=daily`
         );
         const prices = histData.prices.map((p: any) => p[1]);
 
@@ -380,13 +456,9 @@ export async function registerRoutes(
         let { confidence, tradeType } = analyzeSignal(prices);
         
         // If strategy selected, use its win rate to calibrate confidence
-        if (strategyId) {
-          const strategy = await storage.getStrategies(req.session?.userId || DEMO_USER_ID);
-          const selectedStrategy = strategy.find(s => s.id === strategyId);
-          if (selectedStrategy) {
-            // Blend strategy's win rate with calculated confidence
-            confidence = (confidence + selectedStrategy.winRate) / 2;
-          }
+        if (selectedStrategy) {
+          // Blend strategy's win rate with calculated confidence
+          confidence = (confidence + selectedStrategy.winRate) / 2;
         }
 
         const entry = livePrice;
@@ -406,7 +478,7 @@ export async function registerRoutes(
         const signal = await storage.createSignal({
           userId: req.session?.userId || DEMO_USER_ID,
           strategyId: strategyId || null,
-          pair: randomPair,
+          pair: selectedCoin.pair,
           type: tradeType,
           entry: entry.toFixed(2),
           tp: tp.toFixed(2),
