@@ -187,44 +187,44 @@ export async function registerRoutes(
         autoTrading: true,
       });
 
-      // Create initial strategies
+      // Create initial strategies (same for all users)
       const strategiesData = [
         {
           userId: user.id,
-          name: "MACD + Bollinger Bands + RSI",
-          description: "Advanced multi-indicator strategy combining MACD, Bollinger Bands, and RSI for high-accuracy signals",
-          risk: "Medium",
+          name: "Micro-Scalp v2",
+          description: "High-frequency signals for small price movements. Best for volatile markets.",
+          risk: "High",
           winRate: 78,
-          avgProfit: 1.85,
-          totalTrades: 100,
-          profitFactor: 2.4,
-          maxDrawdown: 3.2,
+          avgProfit: "1.2",
           active: true,
+          totalTrades: 142,
+          profitFactor: "2.1",
+          maxDrawdown: "4.5"
         },
         {
           userId: user.id,
-          name: "Support Resistance Breakout",
-          description: "Identifies key support and resistance levels for breakout trading opportunities",
+          name: "Trend Master",
+          description: "Follows major 4H market trends. Fewer trades, higher reliability.",
           risk: "Low",
-          winRate: 72,
-          avgProfit: 1.45,
-          totalTrades: 100,
-          profitFactor: 2.1,
-          maxDrawdown: 2.8,
+          winRate: 85,
+          avgProfit: "3.5",
           active: true,
+          totalTrades: 24,
+          profitFactor: "3.8",
+          maxDrawdown: "1.2"
         },
         {
           userId: user.id,
-          name: "Moving Average Crossover",
-          description: "Classic trend-following strategy using fast and slow moving averages",
-          risk: "Low",
-          winRate: 68,
-          avgProfit: 1.20,
-          totalTrades: 100,
-          profitFactor: 1.8,
-          maxDrawdown: 2.5,
+          name: "Sentiment AI",
+          description: "Experimental strategy based on social volume and news sentiment.",
+          risk: "Med",
+          winRate: 62,
+          avgProfit: "5.1",
           active: false,
-        },
+          totalTrades: 12,
+          profitFactor: "1.5",
+          maxDrawdown: "8.2"
+        }
       ];
 
       for (const strategy of strategiesData) {
