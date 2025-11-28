@@ -23,8 +23,15 @@ function DashboardHome() {
 
   const handleRefresh = async () => {
     try {
-      await fetch("/api/signals/generate", { method: "POST" });
-      await refetchSignals();
+      const res = await fetch("/api/signals/generate", { method: "POST" });
+      if (!res.ok) throw new Error("Failed to generate signal");
+      
+      const newSignal = await res.json();
+      
+      // Optimistically add new signal to cache without full refetch
+      const currentSignals = queryClient.getQueryData<any[]>(["signals"]) || [];
+      queryClient.setQueryData(["signals"], [newSignal, ...currentSignals]);
+      
       toast({
         title: "Signals Refreshed",
         description: "New trading signals have been generated.",
