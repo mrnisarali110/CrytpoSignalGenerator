@@ -439,11 +439,6 @@ export default function Dashboard() {
           {activeTab === 'history' && <HistoryView />}
           {activeTab === 'risk' && <RiskView />}
           {activeTab === 'settings' && <SettingsView />}
-          
-          {/* Decorative Footer */}
-          <div className="flex justify-center py-10 opacity-50">
-            <img src={coreImage} alt="Core" className="w-32 h-32 object-contain mix-blend-screen opacity-30" />
-          </div>
         </div>
       </main>
     </div>
