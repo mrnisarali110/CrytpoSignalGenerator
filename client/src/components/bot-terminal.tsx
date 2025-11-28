@@ -19,6 +19,7 @@ const LOG_MESSAGES = [
 export function BotTerminal() {
   const [logs, setLogs] = useState<string[]>(["System initialized.", "Connecting to signal node..."]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -36,8 +37,8 @@ export function BotTerminal() {
   }, []);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    if (scrollRef.current && containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [logs]);
 
@@ -53,7 +54,7 @@ export function BotTerminal() {
           <span className="text-muted-foreground text-[10px]">ONLINE</span>
         </div>
       </div>
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 p-4" ref={containerRef}>
         <div className="space-y-1.5">
           {logs.map((log, i) => (
             <div key={i} className="text-muted-foreground hover:text-primary transition-colors cursor-default">
