@@ -22,14 +22,14 @@ function DashboardHome() {
   const { data: settings } = useSettings();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedStrategyId, setSelectedStrategyId] = useState<string>("");
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string>("auto");
 
   const handleRefresh = async () => {
     try {
       const res = await fetch("/api/signals/generate", { 
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ strategyId: selectedStrategyId || null })
+        body: JSON.stringify({ strategyId: selectedStrategyId === "auto" ? null : selectedStrategyId })
       });
       if (!res.ok) throw new Error("Failed to generate signal");
       
@@ -103,7 +103,7 @@ function DashboardHome() {
                 <SelectValue placeholder="Select Strategy..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Auto (MACD Bot)</SelectItem>
+                <SelectItem value="auto">Auto (MACD Bot)</SelectItem>
                 {strategies?.map((strategy) => (
                   <SelectItem key={strategy.id} value={strategy.id} disabled={!strategy.active}>
                     {strategy.name} {!strategy.active && "(Paused)"}
