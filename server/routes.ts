@@ -195,6 +195,8 @@ export async function registerRoutes(
 
   app.post("/api/signals/generate", async (req, res) => {
     try {
+      const { strategyId } = req.body;
+      
       const cryptoMap: { [key: string]: string } = {
         "BTC/USDT": "bitcoin",
         "ETH/USDT": "ethereum",
@@ -222,7 +224,17 @@ export async function registerRoutes(
         const prices = histData.prices.map((p: any) => p[1]);
 
         // MACD + Bollinger Bands + RSI Strategy (75-80% accuracy)
-        const { confidence, tradeType } = analyzeSignal(prices);
+        let { confidence, tradeType } = analyzeSignal(prices);
+        
+        // If strategy selected, use its win rate to calibrate confidence
+        if (strategyId) {
+          const strategy = await storage.getStrategies(DEMO_USER_ID);
+          const selectedStrategy = strategy.find(s => s.id === strategyId);
+          if (selectedStrategy) {
+            // Blend strategy's win rate with calculated confidence
+            confidence = (confidence + selectedStrategy.winRate) / 2;
+          }
+        }
 
         const entry = livePrice;
         const tp = tradeType === "LONG"
@@ -238,7 +250,7 @@ export async function registerRoutes(
 
         const signal = await storage.createSignal({
           userId: DEMO_USER_ID,
-          strategyId: null,
+          strategyId: strategyId || null,
           pair: randomPair,
           type: tradeType,
           entry: entry.toFixed(2),

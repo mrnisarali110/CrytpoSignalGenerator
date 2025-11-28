@@ -9,21 +9,28 @@ import { SettingsView } from "@/components/views/settings-view";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu, RotateCw } from "lucide-react";
 import coreImage from "@assets/generated_images/futuristic_ai_trading_bot_core_logo.png";
-import { useSignals, useSettings, useUser } from "@/hooks/use-api";
+import { useSignals, useSettings, useUser, useStrategies } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
 function DashboardHome() {
   const { data: signals, isLoading: signalsLoading, refetch: refetchSignals, isFetching } = useSignals();
+  const { data: strategies } = useStrategies();
   const { data: settings } = useSettings();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string>("");
 
   const handleRefresh = async () => {
     try {
-      const res = await fetch("/api/signals/generate", { method: "POST" });
+      const res = await fetch("/api/signals/generate", { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ strategyId: selectedStrategyId || null })
+      });
       if (!res.ok) throw new Error("Failed to generate signal");
       
       const newSignal = await res.json();
@@ -32,9 +39,10 @@ function DashboardHome() {
       const currentSignals = queryClient.getQueryData<any[]>(["signals"]) || [];
       queryClient.setQueryData(["signals"], [newSignal, ...currentSignals]);
       
+      const strategyName = strategies?.find(s => s.id === selectedStrategyId)?.name || "MACD Bot";
       toast({
         title: "Signals Refreshed",
-        description: "New trading signals have been generated.",
+        description: `New signal generated using ${strategyName}`,
       });
     } catch (error) {
       toast({
@@ -90,6 +98,19 @@ function DashboardHome() {
             Active Signals
           </h2>
           <div className="flex items-center gap-3">
+            <Select value={selectedStrategyId} onValueChange={setSelectedStrategyId}>
+              <SelectTrigger className="w-48 h-9 border-primary/50 text-primary">
+                <SelectValue placeholder="Select Strategy..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Auto (MACD Bot)</SelectItem>
+                {strategies?.map((strategy) => (
+                  <SelectItem key={strategy.id} value={strategy.id} disabled={!strategy.active}>
+                    {strategy.name} {!strategy.active && "(Paused)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button 
               size="sm" 
               variant="outline"
