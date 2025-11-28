@@ -329,22 +329,22 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto grid-bg scroll-smooth">
-        <header className="h-16 border-b border-border/50 bg-background/80 backdrop-blur-md sticky top-0 z-10 px-6 flex items-center justify-between">
-          <h1 className="text-xl font-bold font-sans tracking-tight">
+        <header className="border-b border-border/50 bg-background/80 backdrop-blur-md sticky top-0 z-10 px-3 md:px-6 py-3 md:py-0 md:h-16 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6">
+          <h1 className="text-lg md:text-xl font-bold font-sans tracking-tight">
             {activeTab === 'dashboard' && 'Mission Control'}
             {activeTab === 'strategy' && 'Strategy Lab'}
             {activeTab === 'risk' && 'Risk Management'}
             {activeTab === 'settings' && 'System Config'}
           </h1>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 md:gap-6 flex-wrap">
             <div className="text-right">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Daily Goal</p>
-              <p className="text-sm font-mono font-bold text-primary">{currentGain.toFixed(1)}% / {dailyTarget}%</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider">Daily Goal</p>
+              <p className="text-xs md:text-sm font-mono font-bold text-primary">{currentGain.toFixed(1)}% / {dailyTarget}%</p>
             </div>
-            <div className="h-8 w-[1px] bg-border" />
+            <div className="hidden md:block h-8 w-[1px] bg-border" />
             <div className="text-right">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Balance</p>
-              <p className="text-lg font-mono font-bold text-foreground" data-testid="balance-display">${currentBalance.toFixed(2)}</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider">Total Balance</p>
+              <p className="text-sm md:text-lg font-mono font-bold text-foreground" data-testid="balance-display">${currentBalance.toFixed(2)}</p>
             </div>
             <Dialog open={editOpen} onOpenChange={setEditOpen}>
               <DialogTrigger asChild>
