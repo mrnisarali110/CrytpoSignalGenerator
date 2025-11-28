@@ -12,20 +12,20 @@ import { SignupPage } from "@/pages/signup";
 function Router({ isAuthenticated }: { isAuthenticated: boolean | null }) {
   if (isAuthenticated === null) return null; // Loading
 
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/login" component={LoginPage} />
+        <Route path="/signup" component={SignupPage} />
+        <Route component={() => <Redirect to="/login" />} />
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
-      {!isAuthenticated ? (
-        <>
-          <Route path="/login" component={LoginPage} />
-          <Route path="/signup" component={SignupPage} />
-          <Route component={() => <Redirect to="/login" />} />
-        </>
-      ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route component={NotFound} />
-        </>
-      )}
+      <Route path="/" component={Dashboard} />
+      <Route component={NotFound} />
     </Switch>
   );
 }
