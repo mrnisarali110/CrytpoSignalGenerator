@@ -273,9 +273,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
+    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row">
       {/* Sidebar */}
-      <aside className="w-16 lg:w-64 border-r border-border bg-sidebar flex flex-col sticky top-0 h-screen">
+      <aside className="w-full lg:w-64 lg:border-r border-b lg:border-b-0 border-border bg-sidebar flex flex-row lg:flex-col sticky top-0 lg:h-screen h-auto">
         <div className="p-4 lg:p-6 flex items-center gap-3 border-b border-border/50">
           <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/50 shadow-[0_0_15px_rgba(0,255,148,0.3)]">
              <Cpu className="h-4 w-4 text-primary" />
@@ -285,7 +285,7 @@ export default function Dashboard() {
           </span>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-2 lg:p-4 flex lg:flex-col gap-1 lg:space-y-2 overflow-x-auto lg:overflow-x-visible">
           {[
             { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
             { id: "strategy", icon: Zap, label: "Active Strategies" },
@@ -295,9 +295,11 @@ export default function Dashboard() {
             <Button
               key={item.id}
               variant={activeTab === item.id ? "secondary" : "ghost"}
-              className={`w-full justify-start gap-3 ${activeTab === item.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+              size="sm"
+              className={`flex-shrink-0 lg:w-full justify-center lg:justify-start gap-3 ${activeTab === item.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
               onClick={() => setActiveTab(item.id)}
               data-testid={`nav-${item.id}`}
+              title={item.label}
             >
               <item.icon className="h-5 w-5" />
               <span className="hidden lg:block">{item.label}</span>
@@ -305,7 +307,7 @@ export default function Dashboard() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border/50">
+        <div className="p-2 lg:p-4 border-t lg:border-t border-l lg:border-l-0 border-border/50">
           <div className="hidden lg:flex items-center gap-3 mb-4 p-3 bg-card/50 rounded-lg border border-border/50">
             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-secondary overflow-hidden">
                 {/* Avatar Placeholder */}
@@ -317,7 +319,8 @@ export default function Dashboard() {
           </div>
           <Button 
             variant="outline" 
-            className="w-full justify-start gap-3 border-red-900/30 text-red-400 hover:text-red-300 hover:bg-red-950/30"
+            size="sm"
+            className="w-full lg:w-full justify-center lg:justify-start gap-3 border-red-900/30 text-red-400 hover:text-red-300 hover:bg-red-950/30"
             onClick={handleLogout}
             data-testid="button-logout"
           >
@@ -328,23 +331,23 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto grid-bg scroll-smooth">
-        <header className="border-b border-border/50 bg-background/80 backdrop-blur-md sticky top-0 z-10 px-3 md:px-6 py-3 md:py-0 md:h-16 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6">
-          <h1 className="text-lg md:text-xl font-bold font-sans tracking-tight">
+      <main className="flex-1 overflow-y-auto grid-bg scroll-smooth w-full">
+        <header className="border-b border-border/50 bg-background/80 backdrop-blur-md sticky top-0 z-10 px-3 md:px-6 py-3 md:h-16 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+          <h1 className="text-base sm:text-lg md:text-xl font-bold font-sans tracking-tight truncate">
             {activeTab === 'dashboard' && 'Mission Control'}
             {activeTab === 'strategy' && 'Strategy Lab'}
             {activeTab === 'risk' && 'Risk Management'}
             {activeTab === 'settings' && 'System Config'}
           </h1>
-          <div className="flex items-center gap-3 md:gap-6 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-6 flex-wrap justify-end">
             <div className="text-right">
-              <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider">Daily Goal</p>
-              <p className="text-xs md:text-sm font-mono font-bold text-primary">{currentGain.toFixed(1)}% / {dailyTarget}%</p>
+              <p className="text-[9px] sm:text-xs text-muted-foreground uppercase tracking-wider">Daily Goal</p>
+              <p className="text-xs sm:text-sm font-mono font-bold text-primary">{currentGain.toFixed(1)}%/{dailyTarget}%</p>
             </div>
-            <div className="hidden md:block h-8 w-[1px] bg-border" />
+            <div className="hidden sm:block h-8 w-[1px] bg-border" />
             <div className="text-right">
-              <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider">Total Balance</p>
-              <p className="text-sm md:text-lg font-mono font-bold text-foreground" data-testid="balance-display">${currentBalance.toFixed(2)}</p>
+              <p className="text-[9px] sm:text-xs text-muted-foreground uppercase tracking-wider">Balance</p>
+              <p className="text-xs sm:text-lg font-mono font-bold text-foreground" data-testid="balance-display">${currentBalance.toFixed(2)}</p>
             </div>
             <Dialog open={editOpen} onOpenChange={setEditOpen}>
               <DialogTrigger asChild>
