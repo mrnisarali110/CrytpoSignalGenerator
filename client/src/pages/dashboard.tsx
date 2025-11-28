@@ -93,13 +93,14 @@ function DashboardHome() {
           <PerformanceChart />
           <Button 
             size="sm"
-            variant="ghost"
+            variant="outline"
             onClick={() => setIsTerminalVisible(!isTerminalVisible)}
-            className="absolute top-2 right-2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/20 hover:text-primary"
+            className="absolute top-2 right-2 h-9 px-2 md:h-8 md:w-8 md:p-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-primary/20 hover:text-primary border-primary/50 text-primary text-xs md:text-sm"
             data-testid="button-toggle-logs"
             title={isTerminalVisible ? "Hide system logs" : "Show system logs"}
           >
             <Terminal className="h-4 w-4" />
+            <span className="md:hidden ml-2">{isTerminalVisible ? "Hide Logs" : "Show Logs"}</span>
           </Button>
         </div>
         {isTerminalVisible && (
