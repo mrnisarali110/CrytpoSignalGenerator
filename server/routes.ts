@@ -347,7 +347,15 @@ export async function registerRoutes(
         "ETH/USDT": "ethereum",
         "SOL/USDT": "solana",
         "XRP/USDT": "ripple",
-        "ADA/USDT": "cardano"
+        "ADA/USDT": "cardano",
+        "DOGE/USDT": "dogecoin",
+        "AVAX/USDT": "avalanche-2",
+        "LINK/USDT": "chainlink",
+        "MATIC/USDT": "matic-network",
+        "BNB/USDT": "binancecoin",
+        "ARB/USDT": "arbitrum",
+        "OP/USDT": "optimism",
+        "PEPE/USDT": "pepe"
       };
       
       const pairs = Object.keys(cryptoMap);
