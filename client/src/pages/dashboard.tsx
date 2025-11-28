@@ -137,6 +137,7 @@ function DashboardHome() {
               disabled={isFetching}
               className="border-primary text-primary hover:bg-primary/20 hover:shadow-[0_0_20px_rgba(0,255,148,0.5)] transition-all duration-300 group relative"
               data-testid="button-refresh-signals"
+              title="Generate new trading signals from selected strategy"
             >
               <RotateCw className={`h-4 w-4 transition-transform ${isFetching ? 'animate-spin' : 'group-hover:rotate-180'}`} />
               <span className="hidden sm:inline ml-2">Generate New</span>
@@ -148,6 +149,7 @@ function DashboardHome() {
               onClick={handleReset}
               className="border-red-500 text-red-400 hover:bg-red-600/20 hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] transition-all duration-300 group relative"
               data-testid="button-reset-account"
+              title="Reset account balance to $100 and clear all signals"
             >
               <RotateCw className="h-4 w-4 group-hover:rotate-180 transition-transform duration-300" />
               <span className="hidden sm:inline ml-2">Reset</span>
@@ -337,6 +339,7 @@ export default function Dashboard() {
             className="w-full lg:w-full justify-center lg:justify-start gap-3 border-red-900/30 text-red-400 hover:text-red-300 hover:bg-red-950/30"
             onClick={handleLogout}
             data-testid="button-logout"
+            title="Sign out from your account"
           >
             <LogOut className="h-5 w-5" />
             <span className="hidden lg:block">Disconnect</span>
