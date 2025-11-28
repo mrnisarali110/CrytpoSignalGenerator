@@ -133,28 +133,24 @@ function DashboardHome() {
             </Select>
             <Button 
               size="sm" 
-              variant="outline"
               onClick={handleRefresh}
               disabled={isFetching}
-              className="border-primary text-primary hover:bg-primary/20 hover:shadow-[0_0_20px_rgba(0,255,148,0.5)] transition-all duration-300 group relative"
+              className="h-8 text-xs font-mono bg-primary/20 hover:bg-primary/40 text-primary"
               data-testid="button-refresh-signals"
               title="Generate new trading signals from selected strategy"
             >
-              <RotateCw className={`h-4 w-4 transition-transform ${isFetching ? 'animate-spin' : 'group-hover:rotate-180'}`} />
-              <span className="hidden sm:inline ml-2">Generate New</span>
-              <div className="absolute inset-0 rounded border border-primary/0 group-hover:border-primary/50 transition-all duration-300" />
+              <RotateCw className={`h-3 w-3 mr-1 transition-transform ${isFetching ? 'animate-spin' : ''}`} />
+              Generate New
             </Button>
             <Button 
               size="sm" 
-              variant="outline"
               onClick={handleReset}
-              className="border-red-500 text-red-400 hover:bg-red-600/20 hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] transition-all duration-300 group relative"
+              className="h-8 text-xs font-mono bg-red-600/20 hover:bg-red-600/40 text-red-400"
               data-testid="button-reset-account"
               title="Reset account balance to $100 and clear all signals"
             >
-              <RotateCw className="h-4 w-4 group-hover:rotate-180 transition-transform duration-300" />
-              <span className="hidden sm:inline ml-2">Reset</span>
-              <div className="absolute inset-0 rounded border border-red-500/0 group-hover:border-red-500/50 transition-all duration-300" />
+              <RotateCw className="h-3 w-3 mr-1" />
+              Reset
             </Button>
           </div>
         </div>
