@@ -5,6 +5,7 @@ import { ArrowRight, Target, TrendingUp, AlertTriangle, Copy, CheckCircle2, XCir
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface SignalProps {
   id?: string;
@@ -21,6 +22,7 @@ interface SignalProps {
 export function SignalCard({ signal, index, onTradeComplete }: { signal: SignalProps; index: number; onTradeComplete?: () => void }) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const queryClient = useQueryClient();
 
   const copySignal = () => {
     navigator.clipboard.writeText(`${signal.type} ${signal.pair} @ ${signal.entry} TP: ${signal.tp} SL: ${signal.sl}`);
@@ -33,6 +35,13 @@ export function SignalCard({ signal, index, onTradeComplete }: { signal: SignalP
   const executeTrade = async (result: "tp" | "sl") => {
     setIsProcessing(true);
     try {
+      // Optimistic update - update cache immediately
+      const currentSignals = queryClient.getQueryData<any[]>(["signals"]) || [];
+      const updatedSignals = currentSignals.map(s => 
+        s.id === signal.id ? { ...s, status: "completed" } : s
+      );
+      queryClient.setQueryData(["signals"], updatedSignals);
+
       const res = await fetch("/api/trade/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -50,11 +59,20 @@ export function SignalCard({ signal, index, onTradeComplete }: { signal: SignalP
       
       toast({
         title: result === "tp" ? "Trade Won! 🎉" : "Trade Lost",
-        description: `Balance updated ${profit}. Chart refreshing...`,
+        description: `Balance updated ${profit}`,
       });
+      
+      // Refetch user balance after a short delay to get updated balance
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["user"] });
+        queryClient.invalidateQueries({ queryKey: ["balanceHistory"] });
+      }, 300);
       
       if (onTradeComplete) onTradeComplete();
     } catch (error) {
+      // Revert on error
+      queryClient.invalidateQueries({ queryKey: ["signals"] });
+      
       toast({
         title: "Error",
         description: "Failed to process trade",
