@@ -541,15 +541,22 @@ export async function registerRoutes(
       const tradeSize = currentBalance * 0.1;
       
       let newBalance: number;
+      let profitLoss: number;
       if (result === "tp") {
         const profitPercentage = (confidence / 100) * 0.05;
-        newBalance = currentBalance + (tradeSize * profitPercentage);
+        profitLoss = tradeSize * profitPercentage;
+        newBalance = currentBalance + profitLoss;
       } else {
-        newBalance = currentBalance - (tradeSize * 0.03);
+        profitLoss = -tradeSize * 0.03;
+        newBalance = currentBalance + profitLoss;
       }
 
       await storage.updateUserBalance(req.session?.userId || DEMO_USER_ID, newBalance.toFixed(2));
-      await storage.updateSignal(signalId, "completed");
+      await storage.updateSignal(signalId, "completed", {
+        result,
+        profitLoss: profitLoss.toFixed(2),
+        completedAt: new Date()
+      });
       await storage.addBalanceHistory({
         userId: req.session?.userId || DEMO_USER_ID,
         balance: newBalance.toFixed(2),

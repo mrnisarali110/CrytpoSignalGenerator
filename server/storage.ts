@@ -79,8 +79,13 @@ export class PostgresStorage implements IStorage {
     return newSignal;
   }
 
-  async updateSignal(id: string, status: string): Promise<Signal | undefined> {
-    const [updated] = await db.update(signals).set({ status }).where(eq(signals.id, id)).returning();
+  async updateSignal(id: string, status: string, updates?: { result?: string; profitLoss?: string; completedAt?: Date }): Promise<Signal | undefined> {
+    const updateData: any = { status };
+    if (updates?.result) updateData.result = updates.result;
+    if (updates?.profitLoss) updateData.profitLoss = updates.profitLoss;
+    if (updates?.completedAt) updateData.completedAt = updates.completedAt;
+    
+    const [updated] = await db.update(signals).set(updateData).where(eq(signals.id, id)).returning();
     return updated;
   }
 
