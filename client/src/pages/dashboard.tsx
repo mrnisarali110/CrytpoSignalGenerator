@@ -40,9 +40,11 @@ function DashboardHome() {
       queryClient.setQueryData(["signals"], [newSignal, ...currentSignals]);
       
       const strategyName = strategies?.find(s => s.id === selectedStrategyId)?.name || "MACD Bot";
+      const leverageText = newSignal.leverage ? `${newSignal.leverage}x leverage` : "";
+      const confidenceText = newSignal.confidence ? `${newSignal.confidence}% confidence` : "";
       toast({
         title: "Signals Refreshed",
-        description: `New signal generated using ${strategyName}`,
+        description: `${strategyName} - ${confidenceText}${leverageText ? ", " + leverageText : ""}`,
       });
     } catch (error) {
       toast({
@@ -111,6 +113,9 @@ function DashboardHome() {
                 ))}
               </SelectContent>
             </Select>
+            <Badge variant="outline" className="text-xs font-mono border-yellow-500/30 text-yellow-400">
+              MAX LEVERAGE: {settings?.maxLeverage}x
+            </Badge>
             <Button 
               size="sm" 
               variant="outline"

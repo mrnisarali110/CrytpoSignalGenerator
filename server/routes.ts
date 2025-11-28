@@ -244,9 +244,11 @@ export async function registerRoutes(
           ? entry * (1 - 0.03)
           : entry * (1 + 0.03);
 
-        // Calculate leverage based on confidence (1x to 10x)
+        // Calculate leverage based on confidence and risk settings
         // Higher confidence = higher leverage for account growth
-        const leverage = Math.min(10, Math.max(1, Math.round(1 + (confidence - 50) * 0.18)));
+        const userSettings = await storage.getSettings(DEMO_USER_ID);
+        const maxAllowedLeverage = userSettings?.maxLeverage || 10;
+        const leverage = Math.min(maxAllowedLeverage, Math.max(1, Math.round(1 + (confidence - 50) * 0.18)));
 
         const signal = await storage.createSignal({
           userId: DEMO_USER_ID,
