@@ -33,6 +33,7 @@ export function SignupPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ name, email, password }),
       });
 
@@ -46,7 +47,10 @@ export function SignupPage() {
         description: "Welcome! Redirecting to dashboard...",
       });
 
-      navigate("/");
+      // Reload page to trigger auth check and redirect to dashboard
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
     } catch (error: any) {
       toast({
         title: "Signup Error",

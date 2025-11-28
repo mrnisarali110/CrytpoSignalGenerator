@@ -39,7 +39,9 @@ function App() {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch("/api/auth/me");
+      const res = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
       setIsAuthenticated(res.ok);
     } catch {
       setIsAuthenticated(false);

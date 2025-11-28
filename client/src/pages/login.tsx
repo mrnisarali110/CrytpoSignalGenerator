@@ -21,6 +21,7 @@ export function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
@@ -34,7 +35,10 @@ export function LoginPage() {
         description: "Welcome back!",
       });
 
-      navigate("/");
+      // Reload page to trigger auth check and redirect to dashboard
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
     } catch (error: any) {
       toast({
         title: "Login Error",
