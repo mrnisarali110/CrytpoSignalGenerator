@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { BotTerminal } from "@/components/bot-terminal";
 import { PerformanceChart } from "@/components/performance-chart";
 import { SignalCard } from "@/components/signal-card";
@@ -18,6 +19,7 @@ function DashboardHome() {
   const { data: signals, isLoading: signalsLoading, refetch: refetchSignals, isFetching } = useSignals();
   const { data: settings } = useSettings();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleRefresh = async () => {
     try {
@@ -31,6 +33,31 @@ function DashboardHome() {
       toast({
         title: "Error",
         description: "Failed to generate new signals",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReset = async () => {
+    const confirmed = window.confirm("Reset account to $100 balance and remove all signals? This cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch("/api/account/reset", { method: "POST" });
+      if (!res.ok) throw new Error("Failed to reset account");
+      
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+      queryClient.invalidateQueries({ queryKey: ["signals"] });
+      queryClient.invalidateQueries({ queryKey: ["balanceHistory"] });
+      
+      toast({
+        title: "Account Reset",
+        description: "Balance reset to $100 and all signals cleared.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reset account",
         variant: "destructive",
       });
     }
@@ -66,6 +93,16 @@ function DashboardHome() {
             >
               <RotateCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline ml-2">Generate New</span>
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={handleReset}
+              className="border-red-500/50 text-red-400 hover:bg-red-600/10"
+              data-testid="button-reset-account"
+            >
+              <RotateCw className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Reset</span>
             </Button>
             <Badge variant="outline" className="font-mono text-xs">
               AUTO-TRADING: {settings?.autoTrading ? "ON" : "OFF"}

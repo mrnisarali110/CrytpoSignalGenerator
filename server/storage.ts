@@ -29,6 +29,8 @@ export interface IStorage {
   
   getBalanceHistory(userId: string, limit?: number): Promise<BalanceHistory[]>;
   addBalanceHistory(history: InsertBalanceHistory): Promise<BalanceHistory>;
+  
+  resetAccount(userId: string): Promise<void>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -107,6 +109,15 @@ export class PostgresStorage implements IStorage {
   async addBalanceHistory(history: InsertBalanceHistory): Promise<BalanceHistory> {
     const [newHistory] = await db.insert(balanceHistory).values(history).returning();
     return newHistory;
+  }
+
+  async resetAccount(userId: string): Promise<void> {
+    // Delete all signals
+    await db.delete(signals).where(eq(signals.userId, userId));
+    // Delete all balance history
+    await db.delete(balanceHistory).where(eq(balanceHistory.userId, userId));
+    // Reset balance to 100
+    await db.update(users).set({ balance: "100" }).where(eq(users.id, userId));
   }
 }
 

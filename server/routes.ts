@@ -416,5 +416,18 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/account/reset", async (req, res) => {
+    try {
+      await storage.resetAccount(DEMO_USER_ID);
+      await storage.addBalanceHistory({
+        userId: DEMO_USER_ID,
+        balance: "100",
+      });
+      res.json({ success: true, message: "Account reset successfully" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
