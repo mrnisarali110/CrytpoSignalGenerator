@@ -87,11 +87,11 @@ function DashboardHome() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Top Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 auto-cols-fr">
-        <div className="h-[350px] min-w-0">
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="h-[350px] flex-1 min-w-0">
           <PerformanceChart />
         </div>
-        <div className="h-[350px] min-w-0">
+        <div className="h-[350px] md:w-[calc(33.333%-1rem)]">
           <BotTerminal />
         </div>
       </div>
