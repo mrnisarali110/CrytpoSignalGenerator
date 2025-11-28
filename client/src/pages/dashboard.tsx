@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { BotTerminal } from "@/components/bot-terminal";
 import { PerformanceChart } from "@/components/performance-chart";
 import { SignalCard } from "@/components/signal-card";
@@ -182,6 +183,7 @@ function DashboardHome() {
 }
 
 export default function Dashboard() {
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("dashboard");
   const { data: user, refetch: refetchUser } = useUser();
   const { data: settings } = useSettings();
@@ -246,6 +248,31 @@ export default function Dashboard() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("Logout failed");
+
+      toast({
+        title: "Logged Out",
+        description: "See you next time!",
+      });
+
+      // Redirect to login page
+      navigate("/login");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex">
       {/* Sidebar */}
@@ -289,7 +316,12 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground truncate">Pro Plan Active</p>
             </div>
           </div>
-          <Button variant="outline" className="w-full justify-start gap-3 border-red-900/30 text-red-400 hover:text-red-300 hover:bg-red-950/30">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-3 border-red-900/30 text-red-400 hover:text-red-300 hover:bg-red-950/30"
+            onClick={handleLogout}
+            data-testid="button-logout"
+          >
             <LogOut className="h-5 w-5" />
             <span className="hidden lg:block">Disconnect</span>
           </Button>
