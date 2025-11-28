@@ -171,34 +171,59 @@ export async function registerRoutes(
 
   app.post("/api/signals/generate", async (req, res) => {
     try {
-      const pairs = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "ADA/USDT"];
+      const cryptoMap: { [key: string]: string } = {
+        "BTC/USDT": "bitcoin",
+        "ETH/USDT": "ethereum",
+        "SOL/USDT": "solana",
+        "XRP/USDT": "ripple",
+        "ADA/USDT": "cardano"
+      };
+      
+      const pairs = Object.keys(cryptoMap);
       const types = ["LONG", "SHORT"];
       
       const randomPair = pairs[Math.floor(Math.random() * pairs.length)];
-      const randomType = types[Math.floor(Math.random() * types.length)];
-      const basePrice = Math.floor(Math.random() * 50000) + 1000;
-      const entry = basePrice + (Math.random() * 100 - 50);
-      const tp = randomType === "LONG" 
-        ? entry * (1 + (Math.random() * 0.05 + 0.01))
-        : entry * (1 - (Math.random() * 0.05 + 0.01));
-      const sl = randomType === "LONG"
-        ? entry * (1 - (Math.random() * 0.03 + 0.005))
-        : entry * (1 + (Math.random() * 0.03 + 0.005));
-      const confidence = Math.floor(Math.random() * 30) + 65;
+      const cryptoId = cryptoMap[randomPair];
       
-      const signal = await storage.createSignal({
-        userId: DEMO_USER_ID,
-        strategyId: null,
-        pair: randomPair,
-        type: randomType,
-        entry: entry.toFixed(2),
-        tp: tp.toFixed(2),
-        sl: sl.toFixed(2),
-        confidence,
-        status: "active",
-      });
-      
-      res.json(signal);
+      try {
+        const priceRes = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd&include_market_cap=false&include_24hr_vol=false`
+        );
+        if (!priceRes.ok) throw new Error("Failed to fetch price");
+        
+        const priceData = await priceRes.json();
+        const livePrice = priceData[cryptoId]?.usd;
+        
+        if (!livePrice) throw new Error("Price not found");
+        
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        const entry = livePrice + (Math.random() * livePrice * 0.01 - livePrice * 0.005);
+        
+        const tp = randomType === "LONG" 
+          ? entry * (1 + (Math.random() * 0.05 + 0.01))
+          : entry * (1 - (Math.random() * 0.05 + 0.01));
+        const sl = randomType === "LONG"
+          ? entry * (1 - (Math.random() * 0.03 + 0.005))
+          : entry * (1 + (Math.random() * 0.03 + 0.005));
+        const confidence = Math.floor(Math.random() * 30) + 65;
+        
+        const signal = await storage.createSignal({
+          userId: DEMO_USER_ID,
+          strategyId: null,
+          pair: randomPair,
+          type: randomType,
+          entry: entry.toFixed(2),
+          tp: tp.toFixed(2),
+          sl: sl.toFixed(2),
+          confidence,
+          status: "active",
+        });
+        
+        res.json(signal);
+      } catch (fetchError) {
+        console.error("Price fetch error:", fetchError);
+        res.status(500).json({ error: "Failed to fetch live prices from CoinGecko" });
+      }
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
