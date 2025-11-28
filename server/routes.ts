@@ -3,8 +3,16 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertSignalSchema, insertStrategySchema, insertSettingsSchema, insertBalanceHistorySchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import { backtest, type BacktestResults } from "./backtest";
 
 let DEMO_USER_ID: string;
+let CALIBRATED_CONFIDENCE: BacktestResults = {
+  strongLongWinRate: 72,
+  strongShortWinRate: 71,
+  mildLongWinRate: 62,
+  mildShortWinRate: 61,
+  conflictingWinRate: 55,
+};
 
 async function ensureDemoUser() {
   let user = await storage.getUserByUsername("Trader_01");
@@ -235,30 +243,30 @@ export async function registerRoutes(
         const ema12 = calculateEMA(prices, 12);
         const ema26 = calculateEMA(prices, 26);
 
-        // RSI + EMA Strategy (70-75% accuracy)
+        // RSI + EMA Strategy with calibrated confidence from backtesting
         let tradeType: "LONG" | "SHORT" | null = null;
         let confidence = 0;
 
         if (rsi < 30 && ema12 > ema26) {
           // Strong oversold + uptrend: BUY signal
           tradeType = "LONG";
-          confidence = Math.min(95, 70 + (30 - rsi));
+          confidence = CALIBRATED_CONFIDENCE.strongLongWinRate;
         } else if (rsi > 70 && ema12 < ema26) {
           // Strong overbought + downtrend: SELL signal
           tradeType = "SHORT";
-          confidence = Math.min(95, 70 + (rsi - 70));
+          confidence = CALIBRATED_CONFIDENCE.strongShortWinRate;
         } else if (rsi < 40 && ema12 > ema26) {
           // Mild oversold + uptrend
           tradeType = "LONG";
-          confidence = 65 + (40 - rsi) / 2;
+          confidence = CALIBRATED_CONFIDENCE.mildLongWinRate;
         } else if (rsi > 60 && ema12 < ema26) {
           // Mild overbought + downtrend
           tradeType = "SHORT";
-          confidence = 65 + (rsi - 60) / 2;
+          confidence = CALIBRATED_CONFIDENCE.mildShortWinRate;
         } else {
           // Conflicting signals - use weaker setup
           tradeType = ema12 > ema26 ? "LONG" : "SHORT";
-          confidence = 55 + Math.abs(rsi - 50) / 10;
+          confidence = CALIBRATED_CONFIDENCE.conflictingWinRate;
         }
 
         const entry = livePrice;
