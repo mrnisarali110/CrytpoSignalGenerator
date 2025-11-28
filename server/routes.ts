@@ -171,33 +171,6 @@ export async function registerRoutes(
     }
   });
 
-  // Helper: Calculate RSI (14 period standard)
-  function calculateRSI(prices: number[]): number {
-    if (prices.length < 15) return 50;
-    
-    let gains = 0, losses = 0;
-    for (let i = prices.length - 14; i < prices.length; i++) {
-      const diff = prices[i] - prices[i - 1];
-      if (diff > 0) gains += diff;
-      else losses += Math.abs(diff);
-    }
-    const rs = (gains / 14) / (losses / 14);
-    return 100 - (100 / (1 + rs));
-  }
-
-  // Helper: Calculate EMA
-  function calculateEMA(prices: number[], period: number): number {
-    if (prices.length < period) return prices[prices.length - 1];
-    
-    let sma = prices.slice(-period).reduce((a, b) => a + b, 0) / period;
-    const multiplier = 2 / (period + 1);
-    
-    for (let i = prices.length - period; i < prices.length; i++) {
-      sma = prices[i] * multiplier + sma * (1 - multiplier);
-    }
-    return sma;
-  }
-
   // Helper: Fetch with retry logic
   async function fetchWithRetry(url: string, maxRetries = 3): Promise<any> {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
