@@ -140,9 +140,6 @@ function DashboardHome() {
               <RotateCw className="h-4 w-4" />
               <span className="hidden sm:inline ml-2">Reset</span>
             </Button>
-            <Badge variant="outline" className="font-mono text-xs">
-              AUTO-TRADING: {settings?.autoTrading ? "ON" : "OFF"}
-            </Badge>
           </div>
         </div>
         
