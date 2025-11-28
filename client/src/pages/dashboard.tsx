@@ -103,10 +103,10 @@ function DashboardHome() {
             <Zap className="h-5 w-5 text-primary" />
             Active Signals
           </h2>
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
             <Select value={selectedStrategyId} onValueChange={setSelectedStrategyId}>
-              <SelectTrigger className="w-48 h-9 border-primary/50 text-primary">
-                <SelectValue placeholder="Select Strategy..." />
+              <SelectTrigger className="w-full sm:w-48 h-9 border-primary/50 text-primary text-xs sm:text-sm">
+                <SelectValue placeholder="Strategy..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="auto">Auto (MACD Bot)</SelectItem>
