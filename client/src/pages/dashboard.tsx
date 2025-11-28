@@ -8,13 +8,13 @@ import { SettingsView } from "@/components/views/settings-view";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu } from "lucide-react";
+import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu, RotateCw } from "lucide-react";
 import coreImage from "@assets/generated_images/futuristic_ai_trading_bot_core_logo.png";
 import { useSignals, useSettings, useUser } from "@/hooks/use-api";
 import { formatDistanceToNow } from "date-fns";
 
 function DashboardHome() {
-  const { data: signals, isLoading: signalsLoading } = useSignals();
+  const { data: signals, isLoading: signalsLoading, refetch: refetchSignals, isFetching } = useSignals();
   const { data: settings } = useSettings();
 
   return (
@@ -36,9 +36,22 @@ function DashboardHome() {
             <Zap className="h-5 w-5 text-primary" />
             Active Signals
           </h2>
-          <Badge variant="outline" className="font-mono text-xs">
-            AUTO-TRADING: {settings?.autoTrading ? "ON" : "OFF"}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => refetchSignals()}
+              disabled={isFetching}
+              className="border-primary/50 text-primary hover:bg-primary/10"
+              data-testid="button-refresh-signals"
+            >
+              <RotateCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline ml-2">Refresh</span>
+            </Button>
+            <Badge variant="outline" className="font-mono text-xs">
+              AUTO-TRADING: {settings?.autoTrading ? "ON" : "OFF"}
+            </Badge>
+          </div>
         </div>
         
         {signalsLoading ? (
