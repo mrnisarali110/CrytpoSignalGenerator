@@ -27,6 +27,7 @@ function DashboardHome() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedStrategyId, setSelectedStrategyId] = useState<string>("auto");
+  const [isTerminalVisible, setIsTerminalVisible] = useState(true);
 
   const handleRefresh = async () => {
     try {
@@ -91,9 +92,11 @@ function DashboardHome() {
         <div className="h-[350px] flex-1 min-w-0">
           <PerformanceChart />
         </div>
-        <div className="h-[350px] md:w-[calc(33.333%-1rem)]">
-          <BotTerminal />
-        </div>
+        {isTerminalVisible && (
+          <div className="h-[350px] md:w-[calc(33.333%-1rem)]">
+            <BotTerminal isVisible={isTerminalVisible} onClose={() => setIsTerminalVisible(false)} />
+          </div>
+        )}
       </div>
 
       {/* Signals Feed */}

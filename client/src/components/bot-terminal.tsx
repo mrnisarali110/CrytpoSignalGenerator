@@ -17,9 +17,8 @@ const LOG_MESSAGES = [
   "Updating moving averages (EMA 20/50/200)...",
 ];
 
-export function BotTerminal() {
+export function BotTerminal({ isVisible, onClose }: { isVisible: boolean; onClose: () => void }) {
   const [logs, setLogs] = useState<string[]>(["System initialized.", "Connecting to signal node..."]);
-  const [isVisible, setIsVisible] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -63,7 +62,7 @@ export function BotTerminal() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsVisible(false)}
+            onClick={onClose}
             className="h-6 w-6 p-0 ml-2 hover:bg-red-500/20 hover:text-red-400 transition-colors"
             data-testid="button-close-logs"
             title="Close system logs"
