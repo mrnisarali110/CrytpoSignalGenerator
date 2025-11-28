@@ -86,8 +86,13 @@ function DashboardHome() {
                 key={signal.id} 
                 signal={{
                   id: signal.id,
-                  ...signal,
+                  pair: signal.pair,
                   type: signal.type as "LONG" | "SHORT",
+                  entry: signal.entry,
+                  tp: signal.tp,
+                  sl: signal.sl,
+                  confidence: signal.confidence,
+                  status: signal.status as "active" | "pending" | "completed",
                   time: formatDistanceToNow(new Date(signal.createdAt), { addSuffix: true })
                 }} 
                 index={i}

@@ -148,8 +148,3 @@ export function SignalCard({ signal, index, onTradeComplete }: { signal: SignalP
     </motion.div>
   );
 }
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
