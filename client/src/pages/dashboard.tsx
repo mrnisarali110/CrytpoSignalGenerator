@@ -7,13 +7,14 @@ import { SignalCard } from "@/components/signal-card";
 import { StrategiesView } from "@/components/views/strategies-view";
 import { RiskView } from "@/components/views/risk-view";
 import { SettingsView } from "@/components/views/settings-view";
+import { HistoryView } from "@/components/views/history-view";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu, RotateCw, Edit2 } from "lucide-react";
+import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu, RotateCw, Edit2, History } from "lucide-react";
 import coreImage from "@assets/generated_images/futuristic_ai_trading_bot_core_logo.png";
 import { useSignals, useSettings, useUser, useStrategies, useUpdateSettings } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
@@ -289,6 +290,7 @@ export default function Dashboard() {
           {[
             { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
             { id: "strategy", icon: Zap, label: "Active Strategies" },
+            { id: "history", icon: History, label: "History" },
             { id: "risk", icon: Shield, label: "Risk Settings" },
             { id: "settings", icon: Settings, label: "System Config" },
           ].map((item) => (
@@ -336,6 +338,7 @@ export default function Dashboard() {
           <h1 className="text-base sm:text-lg md:text-xl font-bold font-sans tracking-tight truncate">
             {activeTab === 'dashboard' && 'Mission Control'}
             {activeTab === 'strategy' && 'Strategy Lab'}
+            {activeTab === 'history' && 'Trade History'}
             {activeTab === 'risk' && 'Risk Management'}
             {activeTab === 'settings' && 'System Config'}
           </h1>
@@ -412,6 +415,7 @@ export default function Dashboard() {
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
           {activeTab === 'dashboard' && <DashboardHome />}
           {activeTab === 'strategy' && <StrategiesView />}
+          {activeTab === 'history' && <HistoryView />}
           {activeTab === 'risk' && <RiskView />}
           {activeTab === 'settings' && <SettingsView />}
           
