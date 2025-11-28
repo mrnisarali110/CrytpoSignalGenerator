@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
-import { Terminal, Wifi } from "lucide-react";
+import { Terminal, Wifi, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const LOG_MESSAGES = [
   "Scanning BTC/USDT market depth...",
@@ -18,6 +19,7 @@ const LOG_MESSAGES = [
 
 export function BotTerminal() {
   const [logs, setLogs] = useState<string[]>(["System initialized.", "Connecting to signal node..."]);
+  const [isVisible, setIsVisible] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -42,22 +44,38 @@ export function BotTerminal() {
     }
   }, [logs]);
 
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <Card className="h-full bg-black border-primary/20 flex flex-col font-mono text-xs overflow-hidden shadow-[0_0_30px_rgba(0,255,148,0.05)]">
-      <div className="flex items-center justify-between p-2 border-b border-primary/20 bg-primary/5">
+      <div className="flex items-center justify-between p-2 md:p-3 border-b border-primary/20 bg-primary/5">
         <div className="flex items-center gap-2 text-primary">
           <Terminal className="h-3 w-3" />
-          <span className="uppercase tracking-wider font-bold">System Log</span>
+          <span className="uppercase tracking-wider font-bold text-xs md:text-sm">System Log</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-muted-foreground text-[10px]">ONLINE</span>
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-muted-foreground text-[10px]">ONLINE</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsVisible(false)}
+            className="h-6 w-6 p-0 ml-2 hover:bg-red-500/20 hover:text-red-400 transition-colors"
+            data-testid="button-close-logs"
+            title="Close system logs"
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
       <ScrollArea className="flex-1 p-4" ref={containerRef}>
         <div className="space-y-1.5">
           {logs.map((log, i) => (
-            <div key={i} className="text-muted-foreground hover:text-primary transition-colors cursor-default">
+            <div key={i} className="text-muted-foreground hover:text-primary transition-colors cursor-default text-xs md:text-sm">
               <span className="text-primary/50 mr-2">{">"}</span>
               {log}
             </div>
