@@ -187,6 +187,50 @@ export async function registerRoutes(
         autoTrading: true,
       });
 
+      // Create initial strategies
+      const strategiesData = [
+        {
+          userId: user.id,
+          name: "MACD + Bollinger Bands + RSI",
+          description: "Advanced multi-indicator strategy combining MACD, Bollinger Bands, and RSI for high-accuracy signals",
+          risk: "Medium",
+          winRate: 78,
+          avgProfit: 1.85,
+          totalTrades: 100,
+          profitFactor: 2.4,
+          maxDrawdown: 3.2,
+          active: true,
+        },
+        {
+          userId: user.id,
+          name: "Support Resistance Breakout",
+          description: "Identifies key support and resistance levels for breakout trading opportunities",
+          risk: "Low",
+          winRate: 72,
+          avgProfit: 1.45,
+          totalTrades: 100,
+          profitFactor: 2.1,
+          maxDrawdown: 2.8,
+          active: true,
+        },
+        {
+          userId: user.id,
+          name: "Moving Average Crossover",
+          description: "Classic trend-following strategy using fast and slow moving averages",
+          risk: "Low",
+          winRate: 68,
+          avgProfit: 1.20,
+          totalTrades: 100,
+          profitFactor: 1.8,
+          maxDrawdown: 2.5,
+          active: false,
+        },
+      ];
+
+      for (const strategy of strategiesData) {
+        await storage.createStrategy(strategy);
+      }
+
       // Set session
       req.session!.userId = user.id;
       req.session!.email = email;
