@@ -222,6 +222,28 @@ export async function registerRoutes(
     return sma;
   }
 
+  // Helper: Fetch with retry logic
+  async function fetchWithRetry(url: string, maxRetries = 3): Promise<any> {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          if (res.status === 429 && attempt < maxRetries - 1) {
+            // Rate limited - wait and retry
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+            continue;
+          }
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return await res.json();
+      } catch (err) {
+        if (attempt === maxRetries - 1) throw err;
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+      }
+    }
+  }
+
   app.post("/api/signals/generate", async (req, res) => {
     try {
       const cryptoMap: { [key: string]: string } = {
@@ -237,21 +259,17 @@ export async function registerRoutes(
       const cryptoId = cryptoMap[randomPair];
       
       try {
-        // Fetch live price
-        const priceRes = await fetch(
+        // Fetch live price with retry
+        const priceData = await fetchWithRetry(
           `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd`
         );
-        if (!priceRes.ok) throw new Error("Failed to fetch price");
-        const priceData = await priceRes.json();
         const livePrice = priceData[cryptoId]?.usd;
         if (!livePrice) throw new Error("Price not found");
 
-        // Fetch historical data (last 90 days)
-        const histRes = await fetch(
+        // Fetch historical data (last 90 days) with retry
+        const histData = await fetchWithRetry(
           `https://api.coingecko.com/api/v3/coins/${cryptoId}/market_chart?vs_currency=usd&days=90&interval=daily`
         );
-        if (!histRes.ok) throw new Error("Failed to fetch historical data");
-        const histData = await histRes.json();
         const prices = histData.prices.map((p: any) => p[1]);
 
         // Calculate RSI (14 period - standard)
