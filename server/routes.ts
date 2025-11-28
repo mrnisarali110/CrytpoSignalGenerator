@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertSignalSchema, insertStrategySchema, insertSettingsSchema, insertBalanceHistorySchema } from "@shared/schema";
@@ -6,21 +6,31 @@ import { fromZodError } from "zod-validation-error";
 import { analyzeSignal } from "./strategy-macd";
 import { simulateStrategyBacktest } from "./backtest";
 
-let DEMO_USER_ID: string;
+let req.session?.userId || DEMO_USER_ID: string;
+
+// Middleware to check if user is authenticated
+function requireAuth(req: Request, res: Response, next: any) {
+  if (!req.session?.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  next();
+}
 
 async function ensureDemoUser() {
-  let user = await storage.getUserByUsername("Trader_01");
+  // This function is kept for backwards compatibility but now uses session user
+  // Set a default if no session (for development)
+  let user = await storage.getUserByUsername("demo@example.com");
   
   if (!user) {
     user = await storage.createUser({
-      username: "Trader_01",
+      username: "demo@example.com",
       password: "demo",
-      email: "demo@signalbot.ai",
-      balance: "110.30",
+      email: "demo@example.com",
+      balance: "100.00",
     });
   }
   
-  DEMO_USER_ID = user.id;
+  req.session?.userId || DEMO_USER_ID = user.id;
   
   const existingSettings = await storage.getSettings(user.id);
   if (!existingSettings) {
@@ -143,12 +153,101 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
-  await ensureDemoUser();
+  // Auth routes (no auth required)
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const { name, email, password } = req.body;
+
+      if (!name || !email || !password) {
+        return res.status(400).json({ error: "Missing fields" });
+      }
+
+      // Check if user exists
+      const existingUser = await storage.getUserByUsername(email);
+      if (existingUser) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
+
+      // Create user
+      const user = await storage.createUser({
+        username: email,
+        password, // In production, hash this!
+        email,
+        balance: "100.00",
+      });
+
+      // Create default settings
+      await storage.createSettings({
+        userId: user.id,
+        riskPerTrade: "2.0",
+        maxLeverage: 10,
+        maxDailyDrawdown: "5.0",
+        dailyProfitTarget: "2.0",
+        compoundProfits: true,
+        autoTrading: true,
+      });
+
+      // Set session
+      req.session!.userId = user.id;
+      req.session!.email = email;
+
+      res.json({ success: true, user });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ error: "Missing email or password" });
+      }
+
+      const user = await storage.getUserByUsername(email);
+      if (!user || user.password !== password) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      // Set session
+      req.session!.userId = user.id;
+      req.session!.email = email;
+
+      res.json({ success: true, user });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session?.destroy((err) => {
+      if (err) return res.status(500).json({ error: "Logout failed" });
+      res.json({ success: true });
+    });
+  });
+
+  app.get("/api/auth/me", (req, res) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    res.json({ userId: req.session.userId, email: req.session.email });
+  });
+
+  // Protected routes - apply auth middleware
+  app.use("/api/signals", requireAuth);
+  app.use("/api/strategies", requireAuth);
+  app.use("/api/settings", requireAuth);
+  app.use("/api/balance-history", requireAuth);
+  app.use("/api/user", requireAuth);
+  app.use("/api/trade", requireAuth);
+
   console.log("✓ Using MACD + Bollinger Bands + RSI Strategy (75-80% accuracy)");
 
   app.get("/api/signals", async (req, res) => {
     try {
-      const signals = await storage.getSignals(DEMO_USER_ID, 20);
+      const userId = req.session?.userId || req.session?.userId || DEMO_USER_ID;
+      const signals = await storage.getSignals(userId, 20);
       res.json(signals);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -157,6 +256,7 @@ export async function registerRoutes(
 
   app.post("/api/signals", async (req, res) => {
     try {
+      const userId = req.session?.userId || req.session?.userId || DEMO_USER_ID;
       const result = insertSignalSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: fromZodError(result.error).message });
@@ -164,7 +264,7 @@ export async function registerRoutes(
       
       const signal = await storage.createSignal({
         ...result.data,
-        userId: DEMO_USER_ID,
+        userId,
       });
       res.json(signal);
     } catch (error: any) {
@@ -229,7 +329,7 @@ export async function registerRoutes(
         
         // If strategy selected, use its win rate to calibrate confidence
         if (strategyId) {
-          const strategy = await storage.getStrategies(DEMO_USER_ID);
+          const strategy = await storage.getStrategies(req.session?.userId || DEMO_USER_ID);
           const selectedStrategy = strategy.find(s => s.id === strategyId);
           if (selectedStrategy) {
             // Blend strategy's win rate with calculated confidence
@@ -247,12 +347,12 @@ export async function registerRoutes(
 
         // Calculate leverage based on confidence and risk settings
         // Higher confidence = higher leverage for account growth
-        const userSettings = await storage.getSettings(DEMO_USER_ID);
+        const userSettings = await storage.getSettings(req.session?.userId || DEMO_USER_ID);
         const maxAllowedLeverage = userSettings?.maxLeverage || 10;
         const leverage = Math.min(maxAllowedLeverage, Math.max(1, Math.round(1 + (confidence - 50) * 0.18)));
 
         const signal = await storage.createSignal({
-          userId: DEMO_USER_ID,
+          userId: req.session?.userId || DEMO_USER_ID,
           strategyId: strategyId || null,
           pair: randomPair,
           type: tradeType,
@@ -290,7 +390,7 @@ export async function registerRoutes(
 
   app.get("/api/strategies", async (req, res) => {
     try {
-      const strategies = await storage.getStrategies(DEMO_USER_ID);
+      const strategies = await storage.getStrategies(req.session?.userId || DEMO_USER_ID);
       res.json(strategies);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -306,7 +406,7 @@ export async function registerRoutes(
       
       const strategy = await storage.createStrategy({
         ...result.data,
-        userId: DEMO_USER_ID,
+        userId: req.session?.userId || DEMO_USER_ID,
       });
       res.json(strategy);
     } catch (error: any) {
@@ -329,7 +429,7 @@ export async function registerRoutes(
 
   app.get("/api/settings", async (req, res) => {
     try {
-      const settings = await storage.getSettings(DEMO_USER_ID);
+      const settings = await storage.getSettings(req.session?.userId || DEMO_USER_ID);
       res.json(settings || {});
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -338,7 +438,7 @@ export async function registerRoutes(
 
   app.patch("/api/settings", async (req, res) => {
     try {
-      const settings = await storage.updateSettings(DEMO_USER_ID, req.body);
+      const settings = await storage.updateSettings(req.session?.userId || DEMO_USER_ID, req.body);
       if (!settings) {
         return res.status(404).json({ error: "Settings not found" });
       }
@@ -350,7 +450,7 @@ export async function registerRoutes(
 
   app.get("/api/balance-history", async (req, res) => {
     try {
-      const history = await storage.getBalanceHistory(DEMO_USER_ID, 7);
+      const history = await storage.getBalanceHistory(req.session?.userId || DEMO_USER_ID, 7);
       res.json(history.reverse());
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -359,7 +459,7 @@ export async function registerRoutes(
 
   app.get("/api/user", async (req, res) => {
     try {
-      const user = await storage.getUser(DEMO_USER_ID);
+      const user = await storage.getUser(req.session?.userId || DEMO_USER_ID);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -375,12 +475,12 @@ export async function registerRoutes(
       if (!balance || parseFloat(balance) <= 0) {
         return res.status(400).json({ error: "Invalid balance" });
       }
-      await storage.updateUserBalance(DEMO_USER_ID, balance.toString());
+      await storage.updateUserBalance(req.session?.userId || DEMO_USER_ID, balance.toString());
       await storage.addBalanceHistory({
-        userId: DEMO_USER_ID,
+        userId: req.session?.userId || DEMO_USER_ID,
         balance: balance.toString(),
       });
-      const user = await storage.getUser(DEMO_USER_ID);
+      const user = await storage.getUser(req.session?.userId || DEMO_USER_ID);
       res.json(user);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -390,7 +490,7 @@ export async function registerRoutes(
   app.post("/api/trade/execute", async (req, res) => {
     try {
       const { signalId, result, confidence } = req.body;
-      const user = await storage.getUser(DEMO_USER_ID);
+      const user = await storage.getUser(req.session?.userId || DEMO_USER_ID);
       if (!user) return res.status(404).json({ error: "User not found" });
 
       const currentBalance = parseFloat(user.balance);
@@ -404,10 +504,10 @@ export async function registerRoutes(
         newBalance = currentBalance - (tradeSize * 0.03);
       }
 
-      await storage.updateUserBalance(DEMO_USER_ID, newBalance.toFixed(2));
+      await storage.updateUserBalance(req.session?.userId || DEMO_USER_ID, newBalance.toFixed(2));
       await storage.updateSignal(signalId, "completed");
       await storage.addBalanceHistory({
-        userId: DEMO_USER_ID,
+        userId: req.session?.userId || DEMO_USER_ID,
         balance: newBalance.toFixed(2),
       });
 
@@ -419,9 +519,9 @@ export async function registerRoutes(
 
   app.post("/api/account/reset", async (req, res) => {
     try {
-      await storage.resetAccount(DEMO_USER_ID);
+      await storage.resetAccount(req.session?.userId || DEMO_USER_ID);
       await storage.addBalanceHistory({
-        userId: DEMO_USER_ID,
+        userId: req.session?.userId || DEMO_USER_ID,
         balance: "100",
       });
       res.json({ success: true, message: "Account reset successfully" });
@@ -432,8 +532,8 @@ export async function registerRoutes(
 
   app.post("/api/strategies/backtest", async (req, res) => {
     try {
-      const strategies = await storage.getStrategies(DEMO_USER_ID);
-      const settings = await storage.getSettings(DEMO_USER_ID);
+      const strategies = await storage.getStrategies(req.session?.userId || DEMO_USER_ID);
+      const settings = await storage.getSettings(req.session?.userId || DEMO_USER_ID);
       const results = [];
 
       for (const strategy of strategies) {
