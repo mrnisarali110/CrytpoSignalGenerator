@@ -1,101 +1,86 @@
-// Backtesting module to calculate real historical accuracy
+// Backtesting module to simulate strategy performance with 100 trades
 
-export interface BacktestResults {
-  strongLongWinRate: number;
-  strongShortWinRate: number;
-  mildLongWinRate: number;
-  mildShortWinRate: number;
-  conflictingWinRate: number;
+export interface BacktestMetrics {
+  winRate: number;
+  totalTrades: number;
+  winningTrades: number;
+  losingTrades: number;
+  initialBalance: number;
+  finalBalance: number;
+  totalProfit: number;
+  profitPercentage: number;
+  profitFactor: number;
+  maxDrawdown: number;
+  avgWinPercentage: number;
+  avgLossPercentage: number;
 }
 
-function calculateRSI(prices: number[]): number {
-  if (prices.length < 15) return 50;
-  
-  let gains = 0, losses = 0;
-  for (let i = prices.length - 14; i < prices.length; i++) {
-    const diff = prices[i] - prices[i - 1];
-    if (diff > 0) gains += diff;
-    else losses += Math.abs(diff);
-  }
-  const rs = (gains / 14) / (losses / 14);
-  return 100 - (100 / (1 + rs));
-}
+export function simulateStrategyBacktest(
+  strategyWinRate: number,
+  strategyLeverage: number,
+  riskPerTrade: number = 2.0
+): BacktestMetrics {
+  const initialBalance = 100;
+  const numTrades = 100;
+  const tradeAmount = (initialBalance * (riskPerTrade / 100)) * strategyLeverage;
 
-function calculateEMA(prices: number[], period: number): number {
-  if (prices.length < period) return prices[prices.length - 1];
-  
-  let sma = prices.slice(-period).reduce((a, b) => a + b, 0) / period;
-  const multiplier = 2 / (period + 1);
-  
-  for (let i = prices.length - period; i < prices.length; i++) {
-    sma = prices[i] * multiplier + sma * (1 - multiplier);
-  }
-  return sma;
-}
+  let balance = initialBalance;
+  let maxBalance = initialBalance;
+  let maxDrawdown = 0;
+  let winningTrades = 0;
+  let losingTrades = 0;
+  let totalWinProfit = 0;
+  let totalLossAmount = 0;
 
-export async function backtest(prices: number[]): Promise<BacktestResults> {
-  if (prices.length < 50) {
-    return {
-      strongLongWinRate: 72,
-      strongShortWinRate: 71,
-      mildLongWinRate: 62,
-      mildShortWinRate: 61,
-      conflictingWinRate: 55,
-    };
-  }
+  // Simulate 100 trades based on strategy win rate
+  for (let i = 0; i < numTrades; i++) {
+    const isWin = Math.random() * 100 < strategyWinRate;
 
-  let strongLongWins = 0, strongLongTotal = 0;
-  let strongShortWins = 0, strongShortTotal = 0;
-  let mildLongWins = 0, mildLongTotal = 0;
-  let mildShortWins = 0, mildShortTotal = 0;
-  let conflictingWins = 0, conflictingTotal = 0;
-
-  // Simulate trades on historical data with 7-day lookforward
-  for (let i = 30; i < prices.length - 7; i++) {
-    const historicalPrices = prices.slice(0, i + 1);
-    
-    const rsi = calculateRSI(historicalPrices);
-    const ema12 = calculateEMA(historicalPrices, 12);
-    const ema26 = calculateEMA(historicalPrices, 26);
-
-    const entryPrice = prices[i];
-    const futureHigh = Math.max(...prices.slice(i + 1, i + 8));
-    const futureLow = Math.min(...prices.slice(i + 1, i + 8));
-
-    // Determine signal type
-    let signalType = "";
-    if (rsi < 30 && ema12 > ema26) {
-      signalType = "strongLong";
-      strongLongTotal++;
-      if (futureHigh > entryPrice * 1.03) strongLongWins++;
-    } else if (rsi > 70 && ema12 < ema26) {
-      signalType = "strongShort";
-      strongShortTotal++;
-      if (futureLow < entryPrice * 0.97) strongShortWins++;
-    } else if (rsi < 40 && ema12 > ema26) {
-      signalType = "mildLong";
-      mildLongTotal++;
-      if (futureHigh > entryPrice * 1.02) mildLongWins++;
-    } else if (rsi > 60 && ema12 < ema26) {
-      signalType = "mildShort";
-      mildShortTotal++;
-      if (futureLow < entryPrice * 0.98) mildShortWins++;
+    if (isWin) {
+      winningTrades++;
+      // Winning trade: make 0.5% to 2% per trade (more with leverage)
+      const profitPercentage = (0.5 + Math.random() * 1.5) * (strategyLeverage / 10);
+      const tradeProfit = tradeAmount * (profitPercentage / 100);
+      balance += tradeProfit;
+      totalWinProfit += profitPercentage;
     } else {
-      signalType = "conflicting";
-      conflictingTotal++;
-      const isPredicted = ema12 > ema26;
-      if (isPredicted && futureHigh > entryPrice * 1.02) conflictingWins++;
-      else if (!isPredicted && futureLow < entryPrice * 0.98) conflictingWins++;
+      losingTrades++;
+      // Losing trade: lose 0.3% to 1% per trade (more with leverage)
+      const lossPercentage = (0.3 + Math.random() * 0.7) * (strategyLeverage / 10);
+      const tradeLoss = tradeAmount * (lossPercentage / 100);
+      balance -= tradeLoss;
+      totalLossAmount += lossPercentage;
+    }
+
+    // Track max drawdown
+    if (balance > maxBalance) {
+      maxBalance = balance;
+    }
+    const drawdown = ((maxBalance - balance) / maxBalance) * 100;
+    if (drawdown > maxDrawdown) {
+      maxDrawdown = drawdown;
     }
   }
 
-  const results: BacktestResults = {
-    strongLongWinRate: strongLongTotal > 0 ? Math.round((strongLongWins / strongLongTotal) * 100) : 72,
-    strongShortWinRate: strongShortTotal > 0 ? Math.round((strongShortWins / strongShortTotal) * 100) : 71,
-    mildLongWinRate: mildLongTotal > 0 ? Math.round((mildLongWins / mildLongTotal) * 100) : 62,
-    mildShortWinRate: mildShortTotal > 0 ? Math.round((mildShortWins / mildShortTotal) * 100) : 61,
-    conflictingWinRate: conflictingTotal > 0 ? Math.round((conflictingWins / conflictingTotal) * 100) : 55,
-  };
+  const totalProfit = balance - initialBalance;
+  const profitPercentage = (totalProfit / initialBalance) * 100;
+  const avgWinPercentage = winningTrades > 0 ? totalWinProfit / winningTrades : 0;
+  const avgLossPercentage = losingTrades > 0 ? totalLossAmount / losingTrades : 0;
+  const profitFactor =
+    avgLossPercentage > 0 ? ((avgWinPercentage * winningTrades) / (avgLossPercentage * losingTrades)).toFixed(2) : "0";
 
-  return results;
+  return {
+    winRate: strategyWinRate,
+    totalTrades: numTrades,
+    winningTrades,
+    losingTrades,
+    initialBalance,
+    finalBalance: parseFloat(balance.toFixed(2)),
+    totalProfit: parseFloat(totalProfit.toFixed(2)),
+    profitPercentage: parseFloat(profitPercentage.toFixed(2)),
+    profitFactor: parseFloat(profitFactor as string),
+    maxDrawdown: parseFloat(maxDrawdown.toFixed(2)),
+    avgWinPercentage: parseFloat(avgWinPercentage.toFixed(2)),
+    avgLossPercentage: parseFloat(avgLossPercentage.toFixed(2)),
+  };
 }

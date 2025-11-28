@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Activity, TrendingUp, Clock, AlertCircle } from "lucide-react";
 import { useStrategies, useUpdateStrategy } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
 
 export function StrategiesView() {
   const { data: strategies, isLoading } = useStrategies();
@@ -40,12 +40,32 @@ export function StrategiesView() {
       const res = await fetch("/api/strategies/backtest", { method: "POST" });
       if (!res.ok) throw new Error("Backtest failed");
       
-      const results = await res.json();
-      toast({
-        title: "Backtest Complete",
-        description: `Tested ${results.count} strategies. Win rates updated.`,
+      const data = await res.json();
+      
+      // Show detailed backtest results
+      let detailsHtml = `<div style="text-align: left; font-size: 12px; line-height: 1.6;">`;
+      detailsHtml += `<p><strong>Backtest Results (100 trades per strategy, $100 starting capital)</strong></p>`;
+      
+      data.results.forEach((result: any) => {
+        const profit = result.finalBalance - result.initialBalance;
+        const profitPct = result.profitPercentage;
+        detailsHtml += `
+          <div style="margin-bottom: 15px; padding: 10px; background: rgba(0,255,148,0.05); border-left: 3px solid ${profitPct >= 0 ? '#00ff94' : '#ff4444'};">
+            <strong>${result.name}</strong> (${result.leverage}x leverage)<br/>
+            ✓ Win Rate: ${result.winRate}% | Wins: ${result.winningTrades}/100<br/>
+            💰 Profit Factor: ${result.profitFactor} | Max Drawdown: ${result.maxDrawdown}%<br/>
+            📊 Final: $${result.finalBalance} (${profitPct >= 0 ? '+' : ''}${profitPct.toFixed(2)}%) | Avg Win: ${result.avgWinPercentage}%
+          </div>
+        `;
       });
-      // Refetch strategies to show updated win rates
+      detailsHtml += `</div>`;
+      
+      toast({
+        title: "✅ Backtest Complete",
+        description: `${data.count} strategies tested with 100 trades each. Results updated.`,
+      });
+      
+      // Refetch strategies to show updated metrics
       await new Promise(resolve => setTimeout(resolve, 500));
       window.location.reload();
     } catch (error) {

@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertSignalSchema, insertStrategySchema, insertSettingsSchema, insertBalanceHistorySchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { analyzeSignal } from "./strategy-macd";
+import { simulateStrategyBacktest } from "./backtest";
 
 let DEMO_USER_ID: string;
 
@@ -414,23 +415,43 @@ export async function registerRoutes(
   app.post("/api/strategies/backtest", async (req, res) => {
     try {
       const strategies = await storage.getStrategies(DEMO_USER_ID);
+      const settings = await storage.getSettings(DEMO_USER_ID);
       const results = [];
 
       for (const strategy of strategies) {
-        // Simulate backtest with random improvement to win rate
-        const improvement = Math.floor(Math.random() * 5) - 2; // -2 to +3%
-        const newWinRate = Math.max(50, Math.min(95, strategy.winRate + improvement));
-        
+        // Simulate 100 trades with strategy's leverage and risk settings
+        const leverage = Math.min(parseInt(strategy.risk === "High" ? "8" : strategy.risk === "Med" ? "5" : "3"), settings?.maxLeverage || 10);
+        const riskPerTrade = parseFloat(settings?.riskPerTrade || "2.0");
+
+        const backtestMetrics = simulateStrategyBacktest(strategy.winRate, leverage, riskPerTrade);
+
+        // Update strategy with backtest results
         await storage.updateStrategy(strategy.id, {
-          winRate: newWinRate,
-          totalTrades: strategy.totalTrades + Math.floor(Math.random() * 10) + 5,
-          profitFactor: ((newWinRate / 100) * 3).toFixed(2),
+          winRate: backtestMetrics.winRate,
+          totalTrades: backtestMetrics.totalTrades,
+          profitFactor: backtestMetrics.profitFactor.toString(),
+          maxDrawdown: backtestMetrics.maxDrawdown.toString(),
+          avgProfit: backtestMetrics.avgWinPercentage.toString(),
         });
 
-        results.push({ id: strategy.id, winRate: newWinRate });
+        results.push({
+          id: strategy.id,
+          name: strategy.name,
+          leverage,
+          ...backtestMetrics,
+        });
       }
 
-      res.json({ success: true, count: strategies.length, results });
+      res.json({ 
+        success: true, 
+        count: strategies.length, 
+        results,
+        summary: {
+          initialBalance: 100,
+          tradesPerStrategy: 100,
+          timestamp: new Date().toISOString()
+        }
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
