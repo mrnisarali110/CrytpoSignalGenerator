@@ -103,7 +103,7 @@ function DashboardHome() {
             <Zap className="h-5 w-5 text-primary" />
             Active Signals
           </h2>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Select value={selectedStrategyId} onValueChange={setSelectedStrategyId}>
               <SelectTrigger className="w-48 h-9 border-primary/50 text-primary">
                 <SelectValue placeholder="Select Strategy..." />
@@ -117,29 +117,28 @@ function DashboardHome() {
                 ))}
               </SelectContent>
             </Select>
-            <Badge variant="outline" className="text-xs font-mono border-yellow-500/30 text-yellow-400">
-              MAX LEVERAGE: {settings?.maxLeverage}x
-            </Badge>
             <Button 
               size="sm" 
               variant="outline"
               onClick={handleRefresh}
               disabled={isFetching}
-              className="border-primary/50 text-primary hover:bg-primary/10"
+              className="border-primary text-primary hover:bg-primary/20 hover:shadow-[0_0_20px_rgba(0,255,148,0.5)] transition-all duration-300 group relative"
               data-testid="button-refresh-signals"
             >
-              <RotateCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+              <RotateCw className={`h-4 w-4 transition-transform ${isFetching ? 'animate-spin' : 'group-hover:rotate-180'}`} />
               <span className="hidden sm:inline ml-2">Generate New</span>
+              <div className="absolute inset-0 rounded border border-primary/0 group-hover:border-primary/50 transition-all duration-300" />
             </Button>
             <Button 
               size="sm" 
               variant="outline"
               onClick={handleReset}
-              className="border-red-500/50 text-red-400 hover:bg-red-600/10"
+              className="border-red-500 text-red-400 hover:bg-red-600/20 hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] transition-all duration-300 group relative"
               data-testid="button-reset-account"
             >
-              <RotateCw className="h-4 w-4" />
+              <RotateCw className="h-4 w-4 group-hover:rotate-180 transition-transform duration-300" />
               <span className="hidden sm:inline ml-2">Reset</span>
+              <div className="absolute inset-0 rounded border border-red-500/0 group-hover:border-red-500/50 transition-all duration-300" />
             </Button>
           </div>
         </div>
