@@ -15,6 +15,7 @@ interface SignalProps {
   tp: string;
   sl: string;
   confidence: number;
+  leverage: number;
   time: string;
   status: "active" | "pending" | "completed";
 }
@@ -25,7 +26,7 @@ export function SignalCard({ signal, index, onTradeComplete }: { signal: SignalP
   const queryClient = useQueryClient();
 
   const copySignal = () => {
-    navigator.clipboard.writeText(`${signal.type} ${signal.pair} @ ${signal.entry} TP: ${signal.tp} SL: ${signal.sl}`);
+    navigator.clipboard.writeText(`${signal.type} ${signal.pair} @ ${signal.entry} TP: ${signal.tp} SL: ${signal.sl} ${signal.leverage}x`);
     toast({
       title: "Signal Copied",
       description: "Trade details copied to clipboard",
@@ -105,17 +106,21 @@ export function SignalCard({ signal, index, onTradeComplete }: { signal: SignalP
           <span className="text-xs text-muted-foreground font-mono">{signal.time}</span>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Entry Zone</p>
-              <p className="font-mono text-lg font-medium">{signal.entry}</p>
+              <p className="text-xs text-muted-foreground">Entry</p>
+              <p className="font-mono text-sm font-medium">{signal.entry}</p>
             </div>
-            <div className="space-y-1 text-right">
+            <div className="space-y-1 text-center">
               <p className="text-xs text-muted-foreground">Confidence</p>
-              <div className="flex items-center justify-end gap-1 text-primary font-mono font-bold">
-                <TrendingUp className="h-4 w-4" />
+              <div className="flex items-center justify-center gap-1 text-primary font-mono font-bold text-sm">
+                <TrendingUp className="h-3 w-3" />
                 {signal.confidence}%
               </div>
+            </div>
+            <div className="space-y-1 text-right">
+              <p className="text-xs text-muted-foreground">Leverage</p>
+              <p className="font-mono text-sm font-bold text-yellow-400">{signal.leverage}x</p>
             </div>
           </div>
 

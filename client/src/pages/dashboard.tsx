@@ -136,6 +136,7 @@ function DashboardHome() {
                   tp: signal.tp,
                   sl: signal.sl,
                   confidence: signal.confidence,
+                  leverage: signal.leverage || 1,
                   status: signal.status as "active" | "pending" | "completed",
                   time: formatDistanceToNow(new Date(signal.createdAt), { addSuffix: true })
                 }} 

@@ -36,6 +36,7 @@ export const signals = pgTable("signals", {
   tp: text("tp").notNull(),
   sl: text("sl").notNull(),
   confidence: integer("confidence").notNull(),
+  leverage: integer("leverage").notNull().default(1),
   status: text("status").notNull().default("active"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
