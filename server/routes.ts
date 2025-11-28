@@ -144,12 +144,30 @@ async function ensureDemoUser() {
   return user;
 }
 
+// Initialize backtest calibration on startup
+async function initializeBacktest() {
+  try {
+    const btcHistRes = await fetch(
+      `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=180&interval=daily`
+    );
+    if (btcHistRes.ok) {
+      const btcData = await btcHistRes.json();
+      const btcPrices = btcData.prices.map((p: any) => p[1]);
+      CALIBRATED_CONFIDENCE = await backtest(btcPrices);
+      console.log("✓ Backtest calibration complete. Win rates:", CALIBRATED_CONFIDENCE);
+    }
+  } catch (err) {
+    console.log("⚠ Backtest skipped, using default confidence values");
+  }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   
   await ensureDemoUser();
+  await initializeBacktest();
 
   app.get("/api/signals", async (req, res) => {
     try {
