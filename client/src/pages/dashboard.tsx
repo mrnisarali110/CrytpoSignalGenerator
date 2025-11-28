@@ -26,15 +26,23 @@ function DashboardHome() {
   const { data: settings } = useSettings();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedStrategyId, setSelectedStrategyId] = useState<string>("auto");
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string>("");
   const [isTerminalVisible, setIsTerminalVisible] = useState(true);
+
+  // Set default strategy to first active one
+  if (selectedStrategyId === "" && strategies && strategies.length > 0) {
+    const firstActive = strategies.find(s => s.active);
+    if (firstActive) {
+      setSelectedStrategyId(firstActive.id);
+    }
+  }
 
   const handleRefresh = async () => {
     try {
       const res = await fetch("/api/signals/generate", { 
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ strategyId: selectedStrategyId === "auto" ? null : selectedStrategyId })
+        body: JSON.stringify({ strategyId: selectedStrategyId })
       });
       if (!res.ok) throw new Error("Failed to generate signal");
       
@@ -44,7 +52,7 @@ function DashboardHome() {
       const currentSignals = queryClient.getQueryData<any[]>(["signals"]) || [];
       queryClient.setQueryData(["signals"], [newSignal, ...currentSignals]);
       
-      const strategyName = strategies?.find(s => s.id === selectedStrategyId)?.name || "MACD Bot";
+      const strategyName = strategies?.find(s => s.id === selectedStrategyId)?.name || "Strategy";
       const leverageText = newSignal.leverage ? `${newSignal.leverage}x leverage` : "";
       const confidenceText = newSignal.confidence ? `${newSignal.confidence}% confidence` : "";
       toast({
@@ -120,13 +128,12 @@ function DashboardHome() {
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
             <Select value={selectedStrategyId} onValueChange={setSelectedStrategyId}>
               <SelectTrigger className="w-full sm:w-48 h-9 border-primary/50 text-primary text-xs sm:text-sm">
-                <SelectValue placeholder="Strategy..." />
+                <SelectValue placeholder="Select Strategy..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="auto">Auto (MACD Bot)</SelectItem>
                 {strategies?.map((strategy) => (
                   <SelectItem key={strategy.id} value={strategy.id} disabled={!strategy.active}>
-                    {strategy.name} {!strategy.active && "(Paused)"}
+                    {strategy.name}
                   </SelectItem>
                 ))}
               </SelectContent>
