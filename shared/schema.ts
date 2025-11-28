@@ -59,6 +59,12 @@ export const balanceHistory = pgTable("balance_history", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
+export const session = pgTable("session", {
+  sid: varchar("sid").primaryKey(),
+  sess: text("sess").notNull(),
+  expire: timestamp("expire").notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertStrategySchema = createInsertSchema(strategies).omit({ id: true });
 export const insertSignalSchema = createInsertSchema(signals).omit({ id: true, createdAt: true });
