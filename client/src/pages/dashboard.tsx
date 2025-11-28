@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu, RotateCw, Edit2, History } from "lucide-react";
+import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu, RotateCw, Edit2, History, Terminal } from "lucide-react";
 import coreImage from "@assets/generated_images/futuristic_ai_trading_bot_core_logo.png";
 import { useSignals, useSettings, useUser, useStrategies, useUpdateSettings } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
@@ -89,8 +89,18 @@ function DashboardHome() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Top Stats Row */}
       <div className="flex flex-col md:flex-row gap-6">
-        <div className="h-[350px] flex-1 min-w-0">
+        <div className="h-[350px] flex-1 min-w-0 relative group">
           <PerformanceChart />
+          <Button 
+            size="sm"
+            variant="ghost"
+            onClick={() => setIsTerminalVisible(!isTerminalVisible)}
+            className="absolute top-2 right-2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/20 hover:text-primary"
+            data-testid="button-toggle-logs"
+            title={isTerminalVisible ? "Hide system logs" : "Show system logs"}
+          >
+            <Terminal className="h-4 w-4" />
+          </Button>
         </div>
         {isTerminalVisible && (
           <div className="h-[350px] md:w-[calc(33.333%-1rem)]">
