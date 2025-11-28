@@ -299,5 +299,35 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/trade/execute", async (req, res) => {
+    try {
+      const { signalId, result, confidence } = req.body;
+      const user = await storage.getUser(DEMO_USER_ID);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const currentBalance = parseFloat(user.balance);
+      const tradeSize = currentBalance * 0.1;
+      
+      let newBalance: number;
+      if (result === "tp") {
+        const profitPercentage = (confidence / 100) * 0.05;
+        newBalance = currentBalance + (tradeSize * profitPercentage);
+      } else {
+        newBalance = currentBalance - (tradeSize * 0.03);
+      }
+
+      await storage.updateUserBalance(DEMO_USER_ID, newBalance.toFixed(2));
+      await storage.updateSignal(signalId, "completed");
+      await storage.addBalanceHistory({
+        userId: DEMO_USER_ID,
+        balance: newBalance.toFixed(2),
+      });
+
+      res.json({ success: true, newBalance: newBalance.toFixed(2) });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

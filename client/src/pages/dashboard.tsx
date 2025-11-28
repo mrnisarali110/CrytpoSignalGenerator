@@ -85,11 +85,16 @@ function DashboardHome() {
               <SignalCard 
                 key={signal.id} 
                 signal={{
+                  id: signal.id,
                   ...signal,
                   type: signal.type as "LONG" | "SHORT",
                   time: formatDistanceToNow(new Date(signal.createdAt), { addSuffix: true })
                 }} 
-                index={i} 
+                index={i}
+                onTradeComplete={() => {
+                  refetchSignals();
+                  setTimeout(() => window.location.reload(), 500);
+                }}
               />
             ))}
           </div>

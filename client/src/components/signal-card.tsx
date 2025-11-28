@@ -1,11 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Target, TrendingUp, AlertTriangle, Copy } from "lucide-react";
+import { ArrowRight, Target, TrendingUp, AlertTriangle, Copy, CheckCircle2, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface SignalProps {
+  id?: string;
   pair: string;
   type: "LONG" | "SHORT";
   entry: string;
@@ -16,8 +18,9 @@ interface SignalProps {
   status: "active" | "pending" | "completed";
 }
 
-export function SignalCard({ signal, index }: { signal: SignalProps; index: number }) {
+export function SignalCard({ signal, index, onTradeComplete }: { signal: SignalProps; index: number; onTradeComplete?: () => void }) {
   const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const copySignal = () => {
     navigator.clipboard.writeText(`${signal.type} ${signal.pair} @ ${signal.entry} TP: ${signal.tp} SL: ${signal.sl}`);
@@ -25,6 +28,41 @@ export function SignalCard({ signal, index }: { signal: SignalProps; index: numb
       title: "Signal Copied",
       description: "Trade details copied to clipboard",
     });
+  };
+
+  const executeTrade = async (result: "tp" | "sl") => {
+    setIsProcessing(true);
+    try {
+      const res = await fetch("/api/trade/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          signalId: signal.id,
+          result,
+          confidence: signal.confidence
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to execute trade");
+      
+      const profit = result === "tp" 
+        ? `+${(signal.confidence * 0.1).toFixed(1)}%` 
+        : `-${(3).toFixed(1)}%`;
+      
+      toast({
+        title: result === "tp" ? "Trade Won! 🎉" : "Trade Lost",
+        description: `Balance updated ${profit}. Chart refreshing...`,
+      });
+      
+      if (onTradeComplete) onTradeComplete();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process trade",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -76,14 +114,40 @@ export function SignalCard({ signal, index }: { signal: SignalProps; index: numb
             </div>
           </div>
 
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="w-full mt-4 h-8 text-xs font-mono uppercase tracking-wider hover:bg-primary/20 hover:text-primary transition-colors"
-            onClick={copySignal}
-          >
-            <Copy className="h-3 w-3 mr-2" /> Copy Signal
-          </Button>
+          {signal.status === "active" ? (
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <Button 
+                size="sm" 
+                disabled={isProcessing}
+                onClick={() => executeTrade("tp")}
+                className="h-8 text-xs font-mono bg-green-600/20 hover:bg-green-600/40 text-green-400"
+              >
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Hit TP
+              </Button>
+              <Button 
+                size="sm" 
+                disabled={isProcessing}
+                onClick={() => executeTrade("sl")}
+                className="h-8 text-xs font-mono bg-red-600/20 hover:bg-red-600/40 text-red-400"
+              >
+                <XCircle className="h-3 w-3 mr-1" /> Hit SL
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full mt-4 h-8 text-xs font-mono uppercase tracking-wider hover:bg-primary/20 hover:text-primary transition-colors"
+              onClick={copySignal}
+            >
+              <Copy className="h-3 w-3 mr-2" /> Copy Signal
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
         </CardContent>
       </Card>
     </motion.div>

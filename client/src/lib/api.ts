@@ -71,3 +71,13 @@ export async function fetchUser(): Promise<User> {
   if (!res.ok) throw new Error("Failed to fetch user");
   return res.json();
 }
+
+export async function executeTrade(signalId: string, result: "tp" | "sl", confidence: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/trade/execute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ signalId, result, confidence }),
+  });
+  if (!res.ok) throw new Error("Failed to execute trade");
+  return res.json();
+}
