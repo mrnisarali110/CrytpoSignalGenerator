@@ -104,14 +104,15 @@ export function StrategiesView() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Trading Strategies</h2>
-          <p className="text-muted-foreground">Manage active algorithms and view performance metrics.</p>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Trading Strategies</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">Manage active algorithms and view performance metrics.</p>
         </div>
         <Button 
           variant="outline" 
-          className="border-primary/50 text-primary hover:bg-primary/10"
+          size="sm"
+          className="border-primary/50 text-primary hover:bg-primary/10 w-full sm:w-auto"
           onClick={handleBacktestAll}
           disabled={isBacktesting}
         >
@@ -120,38 +121,41 @@ export function StrategiesView() {
         </Button>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-4 sm:gap-6">
         {strategies?.map((strategy) => (
           <Card key={strategy.id} className={`border-l-4 ${strategy.active ? 'border-l-primary bg-card/50' : 'border-l-muted bg-card/20'} backdrop-blur-sm transition-all`}>
-            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-xl">{strategy.name}</CardTitle>
-                  <Badge variant={strategy.active ? "default" : "secondary"} className={strategy.active ? "bg-primary/20 text-primary hover:bg-primary/30" : ""}>
-                    {strategy.active ? "ACTIVE" : "PAUSED"}
-                  </Badge>
-                  <Badge variant="outline" className={
-                    strategy.risk === "High" ? "text-red-400 border-red-400/30" :
-                    strategy.risk === "Med" ? "text-yellow-400 border-yellow-400/30" :
-                    "text-green-400 border-green-400/30"
-                  }>
-                    {strategy.risk} Risk
-                  </Badge>
-                  <Badge variant="outline" className="text-yellow-500 border-yellow-500/30 font-mono">
-                    {getLeverageRange(strategy.risk).min}x - {getLeverageRange(strategy.risk).max}x
-                  </Badge>
+            <CardHeader className="flex flex-col space-y-3 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
+                    <CardTitle className="text-lg sm:text-xl">{strategy.name}</CardTitle>
+                    <Badge variant={strategy.active ? "default" : "secondary"} className={`text-xs ${strategy.active ? "bg-primary/20 text-primary hover:bg-primary/30" : ""}`}>
+                      {strategy.active ? "ACTIVE" : "PAUSED"}
+                    </Badge>
+                    <Badge variant="outline" className={`text-xs ${
+                      strategy.risk === "High" ? "text-red-400 border-red-400/30" :
+                      strategy.risk === "Med" ? "text-yellow-400 border-yellow-400/30" :
+                      "text-green-400 border-green-400/30"
+                    }`}>
+                      {strategy.risk} Risk
+                    </Badge>
+                    <Badge variant="outline" className="text-xs text-yellow-500 border-yellow-500/30 font-mono">
+                      {getLeverageRange(strategy.risk).min}x - {getLeverageRange(strategy.risk).max}x
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-xs sm:text-sm">{strategy.description}</CardDescription>
                 </div>
-                <CardDescription className="max-w-md">{strategy.description}</CardDescription>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="text-sm font-medium text-muted-foreground">Win Rate</div>
-                  <div className="text-2xl font-bold font-mono text-primary">{strategy.winRate}%</div>
+                <div className="flex items-center gap-3 sm:gap-4 justify-between sm:justify-normal">
+                  <div className="text-right">
+                    <div className="text-xs font-medium text-muted-foreground">Win Rate</div>
+                    <div className="text-xl sm:text-2xl font-bold font-mono text-primary">{strategy.winRate}%</div>
+                  </div>
+                  <Switch 
+                    checked={strategy.active} 
+                    onCheckedChange={() => handleToggle(strategy.id, strategy.active)}
+                    title={strategy.active ? "Click to pause this strategy" : "Click to activate this strategy"}
+                  />
                 </div>
-                <Switch 
-                  checked={strategy.active} 
-                  onCheckedChange={() => handleToggle(strategy.id, strategy.active)}
-                />
               </div>
             </CardHeader>
             <CardContent>
