@@ -15,7 +15,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Shield, Zap, LayoutDashboard, Settings, LogOut, Cpu, RotateCw, Edit2, History, Terminal } from "lucide-react";
-import coreImage from "@assets/generated_images/futuristic_ai_trading_bot_core_logo.png";
 import { useSignals, useSettings, useUser, useStrategies, useUpdateSettings } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -352,7 +351,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto scroll-smooth w-full relative" style={{ backgroundImage: `url(${coreImage})`, backgroundPosition: 'top right', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed', backgroundSize: '600px auto' }}>
+      <main className="flex-1 overflow-y-auto scroll-smooth w-full relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background pointer-events-none" />
         <div className="grid-bg absolute inset-0 opacity-20 pointer-events-none" />
         <header className="border-b border-border/50 bg-background/80 backdrop-blur-md sticky top-0 z-10 px-3 md:px-6 py-3 md:h-16 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
