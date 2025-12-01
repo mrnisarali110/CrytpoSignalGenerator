@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertSignalSchema, insertStrategySchema, insertSettingsSchema, insertBalanceHistorySchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { analyzeSignal } from "./strategy-macd";
+import { analyzeSignal as analyzeSignalWinOrDie } from "./strategy-winordie";
 import { simulateStrategyBacktest } from "./backtest";
 
 // Middleware to check if user is authenticated
@@ -65,7 +66,9 @@ export async function registerRoutes(
           active: true,
           totalTrades: 142,
           profitFactor: "2.1",
-          maxDrawdown: "4.5"
+          maxDrawdown: "4.5",
+          minLeverage: 6,
+          maxLeverage: 10
         },
         {
           userId: user.id,
@@ -77,7 +80,9 @@ export async function registerRoutes(
           active: true,
           totalTrades: 24,
           profitFactor: "3.8",
-          maxDrawdown: "1.2"
+          maxDrawdown: "1.2",
+          minLeverage: 2,
+          maxLeverage: 5
         },
         {
           userId: user.id,
@@ -89,7 +94,23 @@ export async function registerRoutes(
           active: false,
           totalTrades: 12,
           profitFactor: "1.5",
-          maxDrawdown: "8.2"
+          maxDrawdown: "8.2",
+          minLeverage: 2,
+          maxLeverage: 4
+        },
+        {
+          userId: user.id,
+          name: "WIN OR DIE",
+          description: "Ultra-precision high-leverage strategy targeting 10-20% per trade. Uses advanced MACD, Stochastic, ADX, Multi-EMA. Fewer trades, maximum profits. Signals may take days to hit TP.",
+          risk: "Extreme",
+          winRate: 68,
+          avgProfit: "15.5",
+          active: true,
+          totalTrades: 48,
+          profitFactor: "4.2",
+          maxDrawdown: "12.8",
+          minLeverage: 10,
+          maxLeverage: 30
         }
       ];
 
@@ -262,8 +283,10 @@ export async function registerRoutes(
         );
         const prices = histData.prices.map((p: any) => p[1]);
 
-        // MACD + Bollinger Bands + RSI Strategy (75-80% accuracy)
-        let { confidence, tradeType } = analyzeSignal(prices);
+        // Choose strategy algorithm based on selected strategy
+        let { confidence, tradeType } = selectedStrategy?.name === "WIN OR DIE" 
+          ? analyzeSignalWinOrDie(prices)
+          : analyzeSignal(prices);
         
         // If strategy selected, use its win rate to calibrate confidence
         if (selectedStrategy) {
