@@ -6,152 +6,12 @@ import { fromZodError } from "zod-validation-error";
 import { analyzeSignal } from "./strategy-macd";
 import { simulateStrategyBacktest } from "./backtest";
 
-let DEMO_USER_ID: string;
-
 // Middleware to check if user is authenticated
 function requireAuth(req: Request, res: Response, next: any) {
   if (!req.session?.userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   next();
-}
-
-async function ensureDemoUser() {
-  // This function is kept for backwards compatibility but now uses session user
-  // Set a default if no session (for development)
-  let user = await storage.getUserByUsername("demo@example.com");
-  
-  if (!user) {
-    user = await storage.createUser({
-      username: "demo@example.com",
-      password: "demo",
-      email: "demo@example.com",
-      balance: "100.00",
-    });
-  }
-  
-  DEMO_USER_ID = user.id;
-  
-  const existingSettings = await storage.getSettings(user.id);
-  if (!existingSettings) {
-    await storage.createSettings({
-      userId: user.id,
-      riskPerTrade: "2.0",
-      maxLeverage: 10,
-      maxDailyDrawdown: "5.0",
-      dailyProfitTarget: "2.0",
-      compoundProfits: true,
-      autoTrading: true,
-    });
-  }
-
-  const existingStrategies = await storage.getStrategies(user.id);
-  if (existingStrategies.length === 0) {
-    const strategiesData = [
-      {
-        userId: user.id,
-        name: "Micro-Scalp v2",
-        description: "High-frequency signals for small price movements. Best for volatile markets.",
-        risk: "High",
-        winRate: 78,
-        avgProfit: "1.2",
-        active: true,
-        totalTrades: 142,
-        profitFactor: "2.1",
-        maxDrawdown: "4.5",
-        minLeverage: 6,
-        maxLeverage: 10
-      },
-      {
-        userId: user.id,
-        name: "Trend Master",
-        description: "Follows major 4H market trends. Fewer trades, higher reliability.",
-        risk: "Low",
-        winRate: 85,
-        avgProfit: "3.5",
-        active: true,
-        totalTrades: 24,
-        profitFactor: "3.8",
-        maxDrawdown: "1.2",
-        minLeverage: 2,
-        maxLeverage: 5
-      },
-      {
-        userId: user.id,
-        name: "Sentiment AI",
-        description: "Experimental strategy based on social volume and news sentiment.",
-        risk: "Med",
-        winRate: 62,
-        avgProfit: "5.1",
-        active: false,
-        totalTrades: 12,
-        profitFactor: "1.5",
-        maxDrawdown: "8.2",
-        minLeverage: 2,
-        maxLeverage: 4
-      }
-    ];
-
-    for (const strategy of strategiesData) {
-      await storage.createStrategy(strategy);
-    }
-  }
-
-  const existingHistory = await storage.getBalanceHistory(user.id, 1);
-  if (existingHistory.length === 0) {
-    for (let i = 0; i < 7; i++) {
-      const balance = 100 + (i * 1.5);
-      await storage.addBalanceHistory({
-        userId: user.id,
-        balance: balance.toFixed(2),
-      });
-    }
-  }
-
-  const existingSignals = await storage.getSignals(user.id, 1);
-  if (existingSignals.length === 0) {
-    const signalsData = [
-      {
-        userId: user.id,
-        strategyId: null,
-        pair: "BTC/USDT",
-        type: "LONG",
-        entry: "94,250.00",
-        tp: "95,100.00",
-        sl: "93,800.00",
-        confidence: 92,
-        status: "active"
-      },
-      {
-        userId: user.id,
-        strategyId: null,
-        pair: "ETH/USDT",
-        type: "SHORT",
-        entry: "3,450.50",
-        tp: "3,380.00",
-        sl: "3,490.00",
-        confidence: 88,
-        status: "active"
-      },
-      {
-        userId: user.id,
-        strategyId: null,
-        pair: "SOL/USDT",
-        type: "LONG",
-        entry: "142.20",
-        tp: "145.00",
-        sl: "140.50",
-        confidence: 85,
-        status: "completed"
-      }
-    ];
-
-    for (const signal of signalsData) {
-      await storage.createSignal(signal);
-    }
-  }
-  
-  return user;
 }
 
 export async function registerRoutes(
@@ -296,7 +156,7 @@ export async function registerRoutes(
 
   app.get("/api/signals", async (req, res) => {
     try {
-      const userId = req.session?.userId || DEMO_USER_ID;
+      const userId = req.session!.userId;
       const signals = await storage.getSignals(userId, 20);
       res.json(signals);
     } catch (error: any) {
@@ -306,7 +166,7 @@ export async function registerRoutes(
 
   app.post("/api/signals", async (req, res) => {
     try {
-      const userId = req.session?.userId || DEMO_USER_ID;
+      const userId = req.session!.userId;
       const result = insertSignalSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: fromZodError(result.error).message });
