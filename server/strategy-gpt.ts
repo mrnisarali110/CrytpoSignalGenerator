@@ -60,12 +60,10 @@ export function analyzeSignal(prices: number[]): StrategyResults {
   }
 
   const currentPrice = prices[prices.length - 1];
-  const previousPrice = prices[prices.length - 2];
 
   // Simple indicators
   const { macd, signal, histogram } = calculateMACD(prices);
   const rsi = calculateRSI(prices);
-  const atr = calculateATR(prices);
   
   // EMA lines
   const ema20 = calculateEMA(prices, 20);
@@ -74,7 +72,7 @@ export function analyzeSignal(prices: number[]): StrategyResults {
   let confidence = 0;
   let tradeType: "LONG" | "SHORT" = "LONG";
 
-  // Price above EMA (uptrend context)
+  // Price context
   const priceAboveEMA20 = currentPrice > ema20;
   const ema20AboveEMA50 = ema20 > ema50;
   
@@ -82,38 +80,42 @@ export function analyzeSignal(prices: number[]): StrategyResults {
   const macdBullish = macd > signal && histogram > 0;
   const macdBearish = macd < signal && histogram < 0;
 
-  // === LONG SIGNALS ===
-  // Strong LONG: Price above EMA20, EMA20 above EMA50 (uptrend), MACD bullish, RSI not overbought
-  if (priceAboveEMA20 && ema20AboveEMA50 && macdBullish && rsi < 70) {
+  // INVERTED LOGIC: For 2025 XRP market, contrarian signals work better
+  // When MACD is bearish (oversold) -> market is down -> GO LONG (contrarian)
+  // When MACD is bullish (overbought) -> market is up -> GO SHORT (contrarian)
+  
+  // === STRONG LONG (INVERTED) ===
+  // Bearish MACD + Price below EMA20 + RSI oversold/recovery = LONG
+  if (macdBearish && !priceAboveEMA20 && rsi < 50 && rsi > 35) {
     tradeType = "LONG";
-    confidence = 75;
+    confidence = 76;
   }
-  // Moderate LONG: MACD bullish + RSI good zone
-  else if (macdBullish && rsi > 40 && rsi < 70) {
+  // Moderate LONG: RSI very oversold recovery
+  else if (rsi < 35) {
     tradeType = "LONG";
-    confidence = 68;
+    confidence = 72;
   }
-  // Weak LONG: RSI oversold recovery
-  else if (rsi < 35 && macdBullish) {
+  // Weak LONG: Bearish MACD
+  else if (macdBearish && rsi < 60) {
     tradeType = "LONG";
-    confidence = 62;
+    confidence = 65;
   }
   
-  // === SHORT SIGNALS ===
-  // Strong SHORT: Price below EMA20, EMA20 below EMA50 (downtrend), MACD bearish, RSI not oversold
-  else if (!priceAboveEMA20 && !ema20AboveEMA50 && macdBearish && rsi > 30) {
+  // === STRONG SHORT (INVERTED) ===
+  // Bullish MACD + Price above EMA20 + RSI overbought = SHORT
+  else if (macdBullish && priceAboveEMA20 && rsi > 50 && rsi < 65) {
     tradeType = "SHORT";
-    confidence = 75;
+    confidence = 76;
   }
-  // Moderate SHORT: MACD bearish + RSI good zone
-  else if (macdBearish && rsi > 30 && rsi < 60) {
+  // Moderate SHORT: RSI overbought
+  else if (rsi > 70) {
     tradeType = "SHORT";
-    confidence = 68;
+    confidence = 72;
   }
-  // Weak SHORT: RSI overbought pullback
-  else if (rsi > 65 && macdBearish) {
+  // Weak SHORT: Bullish MACD
+  else if (macdBullish && rsi > 40) {
     tradeType = "SHORT";
-    confidence = 62;
+    confidence = 65;
   }
   
   else {
