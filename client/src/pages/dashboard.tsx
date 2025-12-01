@@ -141,22 +141,22 @@ function DashboardHome() {
               size="sm" 
               onClick={handleRefresh}
               disabled={isFetching}
-              className="h-8 text-xs font-mono bg-primary/20 hover:bg-primary/40 text-primary"
+              className="h-9 px-4 text-sm font-mono bg-primary hover:bg-primary/90 text-background font-bold"
               data-testid="button-refresh-signals"
               title="Generate new trading signals from selected strategy"
             >
-              <RotateCw className={`h-3 w-3 mr-1 transition-transform ${isFetching ? 'animate-spin' : ''}`} />
+              <RotateCw className={`h-4 w-4 mr-2 transition-transform ${isFetching ? 'animate-spin' : ''}`} />
               Generate New
             </Button>
             <Button 
               size="sm" 
               onClick={handleReset}
-              className="h-8 text-xs font-mono bg-red-600/20 hover:bg-red-600/40 text-red-400"
+              className="h-9 px-4 text-sm font-mono bg-red-600 hover:bg-red-700 text-white font-bold"
               data-testid="button-reset-account"
               title="Reset account balance to $100 and clear all signals"
             >
-              <RotateCw className="h-3 w-3 mr-1" />
-              Reset
+              <RotateCw className="h-4 w-4 mr-2" />
+              Reset All
             </Button>
           </div>
         </div>
