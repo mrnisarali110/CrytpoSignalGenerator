@@ -31,18 +31,40 @@ interface TradeRecord {
   profitLoss: number;
 }
 
-async function fetchHistoricalData(cryptoId: string, days: number = 180): Promise<number[]> {
-  try {
-    const res = await fetch(
-      `https://api.coingecko.com/api/v3/coins/${cryptoId}/market_chart?vs_currency=usd&days=${days}&interval=daily`
-    );
-    if (!res.ok) throw new Error(`Failed to fetch data for ${cryptoId}`);
-    const data = await res.json();
-    return data.prices.map((p: any) => p[1]);
-  } catch (error) {
-    console.error(`Error fetching history for ${cryptoId}:`, error);
-    return [];
+async function fetchHistoricalData(cryptoId: string, days: number = 180, maxRetries: number = 4): Promise<number[]> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const res = await fetch(
+        `https://api.coingecko.com/api/v3/coins/${cryptoId}/market_chart?vs_currency=usd&days=${days}&interval=daily`
+      );
+      
+      if (!res.ok) {
+        if (res.status === 429 && attempt < maxRetries - 1) {
+          // Rate limited - wait and retry with exponential backoff
+          const delay = Math.pow(2, attempt) * 2000; // 2s, 4s, 8s, 16s
+          console.warn(`Rate limited for ${cryptoId}, retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        throw new Error(`HTTP ${res.status} for ${cryptoId}`);
+      }
+      
+      const data = await res.json();
+      if (!data.prices || data.prices.length === 0) {
+        throw new Error(`No price data returned for ${cryptoId}`);
+      }
+      return data.prices.map((p: any) => p[1]);
+    } catch (error) {
+      if (attempt === maxRetries - 1) {
+        console.error(`Failed to fetch ${cryptoId} after ${maxRetries} attempts:`, error);
+        return [];
+      }
+      // Wait before retry
+      const delay = Math.pow(2, attempt) * 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
+  return [];
 }
 
 export async function runRealBacktest(
