@@ -233,7 +233,7 @@ export async function registerRoutes(
       
       let selectedStrategy = null;
       if (strategyId) {
-        const strategies = await storage.getStrategies(req.session?.userId || DEMO_USER_ID);
+        const strategies = await storage.getStrategies(req.session!.userId);
         selectedStrategy = strategies.find(s => s.id === strategyId);
       }
       
@@ -280,7 +280,7 @@ export async function registerRoutes(
           : entry * (1 + 0.03);
 
         // Calculate leverage using strategy-specific range or global max leverage
-        const userSettings = await storage.getSettings(req.session?.userId || DEMO_USER_ID);
+        const userSettings = await storage.getSettings(req.session!.userId);
         const globalMaxLeverage = userSettings?.maxLeverage || 10;
         
         let leverage: number;
@@ -298,7 +298,7 @@ export async function registerRoutes(
         }
 
         const signal = await storage.createSignal({
-          userId: req.session?.userId || DEMO_USER_ID,
+          userId: req.session!.userId,
           strategyId: strategyId || null,
           pair: selectedPair,
           type: tradeType,
@@ -337,7 +337,7 @@ export async function registerRoutes(
   app.post("/api/trade/execute", async (req, res) => {
     try {
       const { signalId, result } = req.body;
-      const userId = req.session?.userId || DEMO_USER_ID;
+      const userId = req.session!.userId;
 
       // Get signal details
       const signals = await storage.getSignals(userId, 100);
@@ -412,7 +412,7 @@ export async function registerRoutes(
 
   app.get("/api/strategies", async (req, res) => {
     try {
-      const strategies = await storage.getStrategies(req.session?.userId || DEMO_USER_ID);
+      const strategies = await storage.getStrategies(req.session!.userId);
       res.json(strategies);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -428,7 +428,7 @@ export async function registerRoutes(
       
       const strategy = await storage.createStrategy({
         ...result.data,
-        userId: req.session?.userId || DEMO_USER_ID,
+        userId: req.session!.userId,
       });
       res.json(strategy);
     } catch (error: any) {
@@ -451,7 +451,7 @@ export async function registerRoutes(
 
   app.get("/api/settings", async (req, res) => {
     try {
-      const settings = await storage.getSettings(req.session?.userId || DEMO_USER_ID);
+      const settings = await storage.getSettings(req.session!.userId);
       res.json(settings || {});
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -460,7 +460,7 @@ export async function registerRoutes(
 
   app.patch("/api/settings", async (req, res) => {
     try {
-      const settings = await storage.updateSettings(req.session?.userId || DEMO_USER_ID, req.body);
+      const settings = await storage.updateSettings(req.session!.userId, req.body);
       if (!settings) {
         return res.status(404).json({ error: "Settings not found" });
       }
@@ -472,7 +472,7 @@ export async function registerRoutes(
 
   app.get("/api/balance-history", async (req, res) => {
     try {
-      const history = await storage.getBalanceHistory(req.session?.userId || DEMO_USER_ID, 7);
+      const history = await storage.getBalanceHistory(req.session!.userId, 7);
       res.json(history.reverse());
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -481,7 +481,7 @@ export async function registerRoutes(
 
   app.get("/api/user", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session?.userId || DEMO_USER_ID);
+      const user = await storage.getUser(req.session!.userId);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -497,60 +497,24 @@ export async function registerRoutes(
       if (!balance || parseFloat(balance) <= 0) {
         return res.status(400).json({ error: "Invalid balance" });
       }
-      await storage.updateUserBalance(req.session?.userId || DEMO_USER_ID, balance.toString());
+      await storage.updateUserBalance(req.session!.userId, balance.toString());
       await storage.addBalanceHistory({
-        userId: req.session?.userId || DEMO_USER_ID,
+        userId: req.session!.userId,
         balance: balance.toString(),
       });
-      const user = await storage.getUser(req.session?.userId || DEMO_USER_ID);
+      const user = await storage.getUser(req.session!.userId);
       res.json(user);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  app.post("/api/trade/execute", async (req, res) => {
-    try {
-      const { signalId, result, confidence } = req.body;
-      const user = await storage.getUser(req.session?.userId || DEMO_USER_ID);
-      if (!user) return res.status(404).json({ error: "User not found" });
-
-      const currentBalance = parseFloat(user.balance);
-      const tradeSize = currentBalance * 0.1;
-      
-      let newBalance: number;
-      let profitLoss: number;
-      if (result === "tp") {
-        const profitPercentage = (confidence / 100) * 0.05;
-        profitLoss = tradeSize * profitPercentage;
-        newBalance = currentBalance + profitLoss;
-      } else {
-        profitLoss = -tradeSize * 0.03;
-        newBalance = currentBalance + profitLoss;
-      }
-
-      await storage.updateUserBalance(req.session?.userId || DEMO_USER_ID, newBalance.toFixed(2));
-      await storage.updateSignal(signalId, "completed", {
-        result,
-        profitLoss: profitLoss.toFixed(2),
-        completedAt: new Date()
-      });
-      await storage.addBalanceHistory({
-        userId: req.session?.userId || DEMO_USER_ID,
-        balance: newBalance.toFixed(2),
-      });
-
-      res.json({ success: true, newBalance: newBalance.toFixed(2) });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
 
   app.post("/api/account/reset", async (req, res) => {
     try {
-      await storage.resetAccount(req.session?.userId || DEMO_USER_ID);
+      await storage.resetAccount(req.session!.userId);
       await storage.addBalanceHistory({
-        userId: req.session?.userId || DEMO_USER_ID,
+        userId: req.session!.userId,
         balance: "100",
       });
       res.json({ success: true, message: "Account reset successfully" });
@@ -561,8 +525,8 @@ export async function registerRoutes(
 
   app.post("/api/strategies/backtest", async (req, res) => {
     try {
-      const strategies = await storage.getStrategies(req.session?.userId || DEMO_USER_ID);
-      const settings = await storage.getSettings(req.session?.userId || DEMO_USER_ID);
+      const strategies = await storage.getStrategies(req.session!.userId);
+      const settings = await storage.getSettings(req.session!.userId);
       const results = [];
 
       for (const strategy of strategies) {
