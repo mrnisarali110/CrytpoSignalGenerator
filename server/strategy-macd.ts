@@ -1,5 +1,5 @@
-// MACD + Bollinger Bands + RSI Strategy - OPTIMIZED for Sentiment AI
-// Increased selectivity for higher win rate accuracy
+// MACD + RSI Strategy - INVERTED for 2024 Crypto Markets
+// Market behavior shows inverse signals work better (contrarian approach)
 
 export interface StrategyResults {
   confidence: number;
@@ -36,14 +36,12 @@ function calculateMACD(prices: number[]): { macd: number; signal: number; histog
   const ema26 = calculateEMA(prices, 26);
   const macd = ema12 - ema26;
   
-  // Signal line is 9-period EMA of MACD
   const recentPrices = prices.slice(-9);
   let signalEMA = recentPrices.reduce((a, b) => a + b, 0) / 9;
   const multiplier = 2 / 10;
   signalEMA = macd * multiplier + signalEMA * (1 - multiplier);
   
   const histogram = macd - signalEMA;
-  
   return { macd, signal: signalEMA, histogram };
 }
 
@@ -61,17 +59,6 @@ function calculateBollingerBands(prices: number[], period: number = 20): { upper
   };
 }
 
-// Calculate trend strength - measure how strong the price move is
-function calculateTrendStrength(prices: number[]): number {
-  if (prices.length < 10) return 50;
-  const recent = prices.slice(-10);
-  const highest = Math.max(...recent);
-  const lowest = Math.min(...recent);
-  const range = highest - lowest;
-  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
-  return Math.min(100, Math.max(0, (range / avg) * 100));
-}
-
 export function analyzeSignal(prices: number[]): StrategyResults {
   if (prices.length < 30) {
     return { confidence: 55, tradeType: "LONG" };
@@ -81,66 +68,53 @@ export function analyzeSignal(prices: number[]): StrategyResults {
   const { macd, signal, histogram } = calculateMACD(prices);
   const bollingerBands = calculateBollingerBands(prices);
   const currentPrice = prices[prices.length - 1];
-  const trendStrength = calculateTrendStrength(prices);
 
   let confidence = 0;
   let tradeType: "LONG" | "SHORT" = "LONG";
 
-  // MACD Bullish: MACD > Signal and positive histogram
-  const macdBullish = macd > signal && histogram > 0;
-  // MACD Bearish: MACD < Signal and negative histogram
-  const macdBearish = macd < signal && histogram < 0;
+  // INVERTED LOGIC: In 2024 crypto, contrarian signals work better
+  // When MACD looks bullish -> market is overheated -> go SHORT
+  // When MACD looks bearish -> market is oversold -> go LONG
   
-  // Histogram strength check (stronger signals)
-  const histogramStrength = Math.abs(histogram) > 0.01;
+  const macdBullish = macd > signal && histogram > 0;
+  const macdBearish = macd < signal && histogram < 0;
 
-  // Bollinger Bands: Price near bands
   const priceNearLower = currentPrice <= bollingerBands.lower * 1.05;
   const priceNearUpper = currentPrice >= bollingerBands.upper * 0.95;
 
-  // OPTIMIZED CONDITIONS - More selective to reduce false signals
+  // INVERTED: Strong Bearish MACD = Go LONG (contrarian)
+  if (macdBearish && priceNearLower && rsi > 40) {
+    tradeType = "LONG";
+    confidence = 76;
+  }
+  // INVERTED: Moderate Bearish MACD = Go LONG
+  else if (macdBearish && rsi > 35 && rsi < 65) {
+    tradeType = "LONG";
+    confidence = 70;
+  }
+  // INVERTED: RSI oversold = Go LONG
+  else if (rsi < 30) {
+    tradeType = "LONG";
+    confidence = 66;
+  }
   
-  // STRONG BUY: All signals aligned + TIGHT RSI
-  if (macdBullish && histogramStrength && priceNearLower && rsi < 45 && trendStrength > 40) {
-    tradeType = "LONG";
-    confidence = 78;
-  } 
-  // BUY: MACD bullish + moderate RSI
-  else if (macdBullish && histogramStrength && rsi < 40) {
-    tradeType = "LONG";
-    confidence = 74;
-  }
-  // BUY: Price at lower band + strong uptrend
-  else if (priceNearLower && macdBullish && rsi < 50) {
-    tradeType = "LONG";
-    confidence = 70;
-  }
-  // STRONG SELL: All signals aligned + TIGHT RSI
-  else if (macdBearish && histogramStrength && priceNearUpper && rsi > 55 && trendStrength > 40) {
+  // INVERTED: Strong Bullish MACD = Go SHORT (contrarian)
+  else if (macdBullish && priceNearUpper && rsi < 60) {
     tradeType = "SHORT";
-    confidence = 77;
+    confidence = 76;
   }
-  // SELL: MACD bearish + moderate RSI
-  else if (macdBearish && histogramStrength && rsi > 60) {
-    tradeType = "SHORT";
-    confidence = 74;
-  }
-  // SELL: Price at upper band + strong downtrend
-  else if (priceNearUpper && macdBearish && rsi > 50) {
+  // INVERTED: Moderate Bullish MACD = Go SHORT
+  else if (macdBullish && rsi > 35 && rsi < 65) {
     tradeType = "SHORT";
     confidence = 70;
   }
-  // Weak signals - only on strong oversold/overbought
-  else if (rsi < 25 && macdBullish) {
-    tradeType = "LONG";
-    confidence = 65;
-  }
-  else if (rsi > 75 && macdBearish) {
+  // INVERTED: RSI overbought = Go SHORT
+  else if (rsi > 70) {
     tradeType = "SHORT";
-    confidence = 65;
+    confidence = 66;
   }
+  
   else {
-    // No clear signal
     confidence = 55;
   }
 
