@@ -5,16 +5,16 @@ import { Terminal, Wifi, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const LOG_MESSAGES = [
-  "Scanning BTC/USDT market depth...",
-  "Analyzing 4h RSI divergence...",
-  "Volume spike detected on ETH/USDT...",
-  "Checking correlation matrix...",
-  "Sentiment analysis: Neutral-Bullish...",
-  "Calculating Fibonacci retracement levels...",
-  "Verifying order book liquidity...",
-  "Pattern match: Bull Flag (87% confidence)...",
-  "Network latency: 12ms. Connection stable.",
-  "Updating moving averages (EMA 20/50/200)...",
+  "Monitoring Trend Master strategy...",
+  "Scanning for LONG signals...",
+  "Evaluating Micro-Scalp v2...",
+  "Checking market conditions...",
+  "Analyzing Sentiment AI...",
+  "Watching for entry opportunities...",
+  "Comparing all active strategies...",
+  "Ready to generate signals...",
+  "Connection stable. All systems online.",
+  "Waiting for optimal trading setup...",
 ];
 
 export function BotTerminal({ isVisible, onClose }: { isVisible: boolean; onClose: () => void }) {
