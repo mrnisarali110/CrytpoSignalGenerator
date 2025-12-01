@@ -119,14 +119,14 @@ function DashboardHome() {
 
       {/* Signals Feed */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h2 className="text-lg font-bold flex items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
             Active Signals
           </h2>
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             <Select value={selectedStrategyId} onValueChange={setSelectedStrategyId}>
-              <SelectTrigger className="w-full sm:w-48 h-9 border-primary/50 text-primary text-xs sm:text-sm">
+              <SelectTrigger className="w-full sm:w-56 h-11 border-primary/50 text-primary text-sm font-mono">
                 <SelectValue placeholder="Select Strategy..." />
               </SelectTrigger>
               <SelectContent>
@@ -138,24 +138,22 @@ function DashboardHome() {
               </SelectContent>
             </Select>
             <Button 
-              size="sm" 
               onClick={handleRefresh}
               disabled={isFetching}
-              className="h-9 px-4 text-sm font-mono bg-primary hover:bg-primary/90 text-background font-bold"
+              className="h-11 px-6 text-base font-mono bg-primary hover:bg-primary/90 text-background font-bold shadow-lg"
               data-testid="button-refresh-signals"
               title="Generate new trading signals from selected strategy"
             >
-              <RotateCw className={`h-4 w-4 mr-2 transition-transform ${isFetching ? 'animate-spin' : ''}`} />
+              <RotateCw className={`h-5 w-5 mr-2 transition-transform ${isFetching ? 'animate-spin' : ''}`} />
               Generate New
             </Button>
             <Button 
-              size="sm" 
               onClick={handleReset}
-              className="h-9 px-4 text-sm font-mono bg-red-600 hover:bg-red-700 text-white font-bold"
+              className="h-11 px-6 text-base font-mono bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg"
               data-testid="button-reset-account"
               title="Reset account balance to $100 and clear all signals"
             >
-              <RotateCw className="h-4 w-4 mr-2" />
+              <RotateCw className="h-5 w-5 mr-2" />
               Reset All
             </Button>
           </div>
