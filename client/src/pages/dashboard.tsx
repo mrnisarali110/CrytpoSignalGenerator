@@ -350,8 +350,6 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto scroll-smooth w-full relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background pointer-events-none" />
-        <div className="grid-bg absolute inset-0 opacity-20 pointer-events-none" />
         <header className="border-b border-border/50 bg-background/80 backdrop-blur-md sticky top-0 z-10 px-3 md:px-6 py-3 md:h-16 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
           <h1 className="text-base sm:text-lg md:text-xl font-bold font-sans tracking-tight truncate">
             {activeTab === 'dashboard' && 'Mission Control'}
