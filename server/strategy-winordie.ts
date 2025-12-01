@@ -187,8 +187,19 @@ export function analyzeSignal(prices: number[]): StrategyResults {
     tradeType = "LONG";
     confidence = 60;
   } 
-  else {
+  else if (rsi > 55) {
+    // Default: Moderate RSI elevation → SHORT
+    tradeType = "SHORT";
+    confidence = 55;
+  }
+  else if (rsi < 45) {
+    // Default: Moderate RSI depression → LONG
     tradeType = "LONG";
+    confidence = 55;
+  }
+  else {
+    // Middle zone - use EMA as tiebreaker
+    tradeType = ema9Above21 ? "SHORT" : "LONG";
     confidence = 55;
   }
 

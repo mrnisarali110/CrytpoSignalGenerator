@@ -114,7 +114,19 @@ export function analyzeSignal(prices: number[]): StrategyResults {
     confidence = 66;
   }
   
+  else if (rsi > 50) {
+    // Default: If RSI is elevated but not overbought, lean SHORT
+    tradeType = "SHORT";
+    confidence = 55;
+  }
+  else if (rsi < 50) {
+    // Default: If RSI is depressed but not oversold, lean LONG
+    tradeType = "LONG";
+    confidence = 55;
+  }
   else {
+    // Perfect middle - alternate based on price position
+    tradeType = currentPrice > bollingerBands.middle ? "SHORT" : "LONG";
     confidence = 55;
   }
 

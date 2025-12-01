@@ -118,7 +118,19 @@ export function analyzeSignal(prices: number[]): StrategyResults {
     confidence = 65;
   }
   
+  else if (rsi > 55) {
+    // Default: RSI elevated → SHORT
+    tradeType = "SHORT";
+    confidence = 55;
+  }
+  else if (rsi < 45) {
+    // Default: RSI depressed → LONG
+    tradeType = "LONG";
+    confidence = 55;
+  }
   else {
+    // Middle RSI - use EMA for direction
+    tradeType = priceAboveEMA20 && ema20AboveEMA50 ? "SHORT" : "LONG";
     confidence = 55;
   }
 
