@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ export function StrategiesView() {
   const { data: strategies, isLoading } = useStrategies();
   const updateStrategy = useUpdateStrategy();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isBacktesting, setIsBacktesting] = useState(false);
 
   const handleToggle = async (id: string, currentActive: boolean) => {
@@ -82,9 +84,9 @@ export function StrategiesView() {
         description: `${data.count} strategies tested with 100 trades each. Results updated.`,
       });
       
-      // Refetch strategies to show updated metrics
+      // Refetch strategies to show updated metrics without reloading page
       await new Promise(resolve => setTimeout(resolve, 500));
-      window.location.reload();
+      queryClient.invalidateQueries({ queryKey: ["strategies"] });
     } catch (error) {
       toast({
         title: "Error",
