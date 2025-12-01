@@ -1,5 +1,5 @@
-// MACD + RSI Strategy - INVERTED for 2024 Crypto Markets
-// Market behavior shows inverse signals work better (contrarian approach)
+// Micro-Scalp v2: MACD + Bollinger Bands + RSI Strategy
+// Detects momentum shifts and trend changes with confirmed signals
 
 export interface StrategyResults {
   confidence: number;
@@ -68,65 +68,65 @@ export function analyzeSignal(prices: number[]): StrategyResults {
   const { macd, signal, histogram } = calculateMACD(prices);
   const bollingerBands = calculateBollingerBands(prices);
   const currentPrice = prices[prices.length - 1];
+  const ema9 = calculateEMA(prices, 9);
+  const ema21 = calculateEMA(prices, 21);
 
   let confidence = 0;
   let tradeType: "LONG" | "SHORT" = "LONG";
 
-  // INVERTED LOGIC: In 2024 crypto, contrarian signals work better
-  // When MACD looks bullish -> market is overheated -> go SHORT
-  // When MACD looks bearish -> market is oversold -> go LONG
-  
   const macdBullish = macd > signal && histogram > 0;
   const macdBearish = macd < signal && histogram < 0;
+  const priceAboveEMA9 = currentPrice > ema9;
+  const ema9AboveEMA21 = ema9 > ema21;
 
-  const priceNearLower = currentPrice <= bollingerBands.lower * 1.05;
-  const priceNearUpper = currentPrice >= bollingerBands.upper * 0.95;
+  // === LONG SIGNALS - Bullish Trend ===
+  // Strong: MACD bullish + Price above EMAs + RSI not overbought
+  if (macdBullish && priceAboveEMA9 && ema9AboveEMA21 && rsi < 70) {
+    tradeType = "LONG";
+    confidence = 74;
+  }
+  // Moderate: Price near lower BB + MACD bullish + RSI oversold recovery
+  else if (currentPrice <= bollingerBands.lower * 1.02 && macdBullish && rsi > 35 && rsi < 55) {
+    tradeType = "LONG";
+    confidence = 68;
+  }
+  // Weak: MACD just crossed bullish
+  else if (macdBullish && histogram > 0 && histogram < 0.5 * Math.abs(macd)) {
+    tradeType = "LONG";
+    confidence = 60;
+  }
 
-  // INVERTED: Strong Bearish MACD = Go LONG (contrarian)
-  if (macdBearish && priceNearLower && rsi > 40) {
-    tradeType = "LONG";
-    confidence = 76;
-  }
-  // INVERTED: Moderate Bearish MACD = Go LONG
-  else if (macdBearish && rsi > 35 && rsi < 65) {
-    tradeType = "LONG";
-    confidence = 70;
-  }
-  // INVERTED: RSI oversold = Go LONG
-  else if (rsi < 30) {
-    tradeType = "LONG";
-    confidence = 66;
-  }
-  
-  // INVERTED: Strong Bullish MACD = Go SHORT (contrarian)
-  else if (macdBullish && priceNearUpper && rsi < 60) {
+  // === SHORT SIGNALS - Bearish Trend ===
+  // Strong: MACD bearish + Price below EMAs + RSI not oversold
+  else if (macdBearish && !priceAboveEMA9 && !ema9AboveEMA21 && rsi > 30) {
     tradeType = "SHORT";
-    confidence = 76;
+    confidence = 74;
   }
-  // INVERTED: Moderate Bullish MACD = Go SHORT
-  else if (macdBullish && rsi > 35 && rsi < 65) {
+  // Moderate: Price near upper BB + MACD bearish + RSI overbought recovery
+  else if (currentPrice >= bollingerBands.upper * 0.98 && macdBearish && rsi > 45 && rsi < 65) {
     tradeType = "SHORT";
-    confidence = 70;
+    confidence = 68;
   }
-  // INVERTED: RSI overbought = Go SHORT
-  else if (rsi > 70) {
+  // Weak: MACD just crossed bearish
+  else if (macdBearish && histogram < 0 && Math.abs(histogram) < 0.5 * Math.abs(macd)) {
     tradeType = "SHORT";
-    confidence = 66;
+    confidence = 60;
   }
-  
-  else if (rsi > 50) {
-    // Default: If RSI is elevated but not overbought, lean SHORT
-    tradeType = "SHORT";
-    confidence = 55;
-  }
-  else if (rsi < 50) {
-    // Default: If RSI is depressed but not oversold, lean LONG
+
+  // === TREND CONTINUATION - No clear reversal ===
+  else if (priceAboveEMA9 && ema9AboveEMA21) {
+    // Still in uptrend
     tradeType = "LONG";
-    confidence = 55;
+    confidence = 57;
+  }
+  else if (!priceAboveEMA9 && !ema9AboveEMA21) {
+    // Still in downtrend
+    tradeType = "SHORT";
+    confidence = 57;
   }
   else {
-    // Perfect middle - alternate based on price position
-    tradeType = currentPrice > bollingerBands.middle ? "SHORT" : "LONG";
+    // Uncertain - use RSI extremes
+    tradeType = rsi > 50 ? "SHORT" : "LONG";
     confidence = 55;
   }
 
