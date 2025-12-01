@@ -474,6 +474,82 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/trade/execute", async (req, res) => {
+    try {
+      const { signalId, result } = req.body;
+      const userId = req.session?.userId || DEMO_USER_ID;
+
+      // Get signal details
+      const signals = await storage.getSignals(userId, 100);
+      const signal = signals.find(s => s.id === signalId);
+      if (!signal) {
+        return res.status(404).json({ error: "Signal not found" });
+      }
+
+      // Get current user balance
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const balance = parseFloat(user.balance);
+      const positionSize = balance * 0.10; // 10% of account balance
+      const notionalExposure = positionSize * signal.leverage; // Apply leverage
+
+      const entry = parseFloat(signal.entry);
+      const tp = parseFloat(signal.tp);
+      const sl = parseFloat(signal.sl);
+
+      let profitLoss = 0;
+      let profitPercentage = 0;
+
+      if (result === "tp") {
+        // Calculate profit based on TP hit
+        if (signal.type === "LONG") {
+          profitPercentage = ((tp - entry) / entry) * 100;
+        } else {
+          profitPercentage = ((entry - tp) / entry) * 100;
+        }
+        profitLoss = (notionalExposure * profitPercentage) / 100;
+      } else if (result === "sl") {
+        // Calculate loss based on SL hit
+        if (signal.type === "LONG") {
+          profitPercentage = ((sl - entry) / entry) * 100;
+        } else {
+          profitPercentage = ((entry - sl) / entry) * 100;
+        }
+        profitLoss = (notionalExposure * profitPercentage) / 100;
+      }
+
+      // Update balance
+      const newBalance = balance + profitLoss;
+      await storage.updateUserBalance(userId, newBalance.toFixed(2));
+
+      // Add to balance history
+      await storage.addBalanceHistory({
+        userId,
+        balance: newBalance.toFixed(2),
+      });
+
+      // Update signal with result
+      await storage.updateSignal(signalId, "completed", {
+        result: result === "tp" ? "win" : "loss",
+        profitLoss: profitLoss.toFixed(2),
+        completedAt: new Date(),
+      });
+
+      res.json({
+        success: true,
+        profitLoss: profitLoss.toFixed(2),
+        newBalance: newBalance.toFixed(2),
+        profitPercentage: profitPercentage.toFixed(2),
+      });
+    } catch (error: any) {
+      console.error("Trade execution error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/strategies", async (req, res) => {
     try {
       const strategies = await storage.getStrategies(req.session?.userId || DEMO_USER_ID);

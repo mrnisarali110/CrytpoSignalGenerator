@@ -48,19 +48,20 @@ export function SignalCard({ signal, index, onTradeComplete }: { signal: SignalP
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           signalId: signal.id,
-          result,
-          confidence: signal.confidence
+          result
         }),
       });
       if (!res.ok) throw new Error("Failed to execute trade");
       
-      const profit = result === "tp" 
-        ? `+${(signal.confidence * 0.1).toFixed(1)}%` 
-        : `-${(3).toFixed(1)}%`;
+      const data = await res.json();
+      const profitLoss = parseFloat(data.profitLoss);
+      const profitPercentage = parseFloat(data.profitPercentage);
+      
+      const displayProfit = `${profitLoss >= 0 ? '+' : ''}$${profitLoss.toFixed(2)} (${profitPercentage >= 0 ? '+' : ''}${profitPercentage.toFixed(1)}%)`;
       
       toast({
-        title: result === "tp" ? "Trade Won! 🎉" : "Trade Lost",
-        description: `Balance updated ${profit}`,
+        title: result === "tp" ? "✅ Trade Won!" : "❌ Trade Lost",
+        description: `P&L: ${displayProfit} | New Balance: $${data.newBalance}`,
       });
       
       // Refetch user balance after a short delay to get updated balance
