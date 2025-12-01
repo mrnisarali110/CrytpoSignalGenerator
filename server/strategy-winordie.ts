@@ -1,7 +1,7 @@
-// WIN OR DIE Strategy - Ultra-Precise High-Leverage High-Growth Trading
-// Uses Advanced: MACD + Stochastic + ADX + Multi-EMA + Volume Analysis
-// Target: 10-20% per trade, High precision, Days to hit TP
-// Accuracy: 60-70% (High precision, fewer trades, bigger wins)
+// WIN OR DIE Strategy - INVERTED for 2025 Crypto Markets
+// Ultra-Precise High-Leverage with Contrarian Signals
+// When market looks bullish → we SHORT (contrarian)
+// When market looks bearish → we LONG (contrarian)
 
 export interface StrategyResults {
   confidence: number;
@@ -55,7 +55,7 @@ function calculateStochastic(prices: number[], period: number = 14): { k: number
   const currentPrice = prices[prices.length - 1];
   
   const k = ((currentPrice - lowest) / (highest - lowest)) * 100 || 50;
-  const d = Math.max(55, Math.min(45, k)); // Smooth D line
+  const d = Math.max(55, Math.min(45, k));
   
   return { k: Math.max(0, Math.min(100, k)), d };
 }
@@ -95,7 +95,6 @@ function analyzeVolumeTrend(prices: number[]): number {
   const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
   const prevAvg = previous.reduce((a, b) => a + b, 0) / previous.length;
   
-  // Simulate volume trend (based on price movement)
   const volatility = Math.abs(recent[recent.length - 1] - recent[0]) / recentAvg;
   return Math.min(100, 50 + (volatility * 200));
 }
@@ -111,7 +110,6 @@ export function analyzeSignal(prices: number[]): StrategyResults {
   const adx = calculateADX(prices);
   const volumeTrend = analyzeVolumeTrend(prices);
   
-  // Multi-EMA crossover
   const ema9 = calculateEMA(prices, 9);
   const ema21 = calculateEMA(prices, 21);
   const ema50 = calculateEMA(prices, 50);
@@ -123,79 +121,77 @@ export function analyzeSignal(prices: number[]): StrategyResults {
 
   let confidence = 0;
   let tradeType: "LONG" | "SHORT" = "LONG";
-  let signalStrength = 0;
 
-  // === ULTRA BULLISH SIGNAL (WIN) ===
+  // === INVERTED LOGIC for 2025 Market ===
+  // When traditional indicators show STRONG BULLISH → We SHORT (contrarian)
+  
+  // ULTRA BEARISH SIGNAL (INVERTED: Traditional bullish) = Go SHORT
   if (
-    ema9Above21 && ema21Above50 && priceAboveEMA50 &&  // EMA alignment
-    macd > macdSignal && histogram > 0 &&               // MACD bullish
-    stoch.k < 80 && rsi < 75 &&                        // Not overbought
-    adx > 55 &&                                         // Strong trend
-    volumeTrend > 60                                    // Good volume
+    ema9Above21 && ema21Above50 && priceAboveEMA50 &&
+    macd > macdSignal && histogram > 0 &&
+    stoch.k < 80 && rsi < 75 &&
+    adx > 55 &&
+    volumeTrend > 60
   ) {
-    tradeType = "LONG";
-    confidence = 75; // High confidence for big wins
-    signalStrength = 10;
+    tradeType = "SHORT";
+    confidence = 75;
   }
-  // STRONG BULLISH
+  // STRONG BEARISH (INVERTED: Traditional bullish) = Go SHORT
   else if (
     ema9Above21 && ema21Above50 &&
     macd > macdSignal &&
     stoch.k < 85 && rsi < 70 &&
     adx > 50
   ) {
-    tradeType = "LONG";
-    confidence = 72;
-    signalStrength = 9;
-  }
-  // === ULTRA BEARISH SIGNAL (WIN) ===
-  else if (
-    !ema9Above21 && !ema21Above50 && currentPrice < ema50 &&  // EMA alignment
-    macd < macdSignal && histogram < 0 &&               // MACD bearish
-    stoch.k > 20 && rsi > 25 &&                        // Not oversold
-    adx > 55 &&                                         // Strong trend
-    volumeTrend > 60                                    // Good volume
-  ) {
     tradeType = "SHORT";
-    confidence = 74;
-    signalStrength = 10;
+    confidence = 72;
   }
-  // STRONG BEARISH
+  // === INVERTED: When indicators show STRONG BEARISH → We LONG (contrarian) ===
+  // ULTRA BULLISH SIGNAL (INVERTED: Traditional bearish) = Go LONG
+  else if (
+    !ema9Above21 && !ema21Above50 && currentPrice < ema50 &&
+    macd < macdSignal && histogram < 0 &&
+    stoch.k > 20 && rsi > 25 &&
+    adx > 55 &&
+    volumeTrend > 60
+  ) {
+    tradeType = "LONG";
+    confidence = 75;
+  }
+  // STRONG BULLISH (INVERTED: Traditional bearish) = Go LONG
   else if (
     !ema9Above21 && !ema21Above50 &&
     macd < macdSignal &&
     stoch.k > 15 && rsi > 30 &&
     adx > 50
   ) {
-    tradeType = "SHORT";
-    confidence = 71;
-    signalStrength = 9;
+    tradeType = "LONG";
+    confidence = 72;
   }
-  // MODERATE BULLISH
+  // MODERATE BEARISH (INVERTED: Traditional bullish) = Go SHORT
   else if (ema9Above21 && macd > macdSignal && stoch.k < 70 && rsi < 65) {
-    tradeType = "LONG";
+    tradeType = "SHORT";
     confidence = 68;
-    signalStrength = 7;
   }
-  // MODERATE BEARISH
+  // MODERATE BULLISH (INVERTED: Traditional bearish) = Go LONG
   else if (!ema9Above21 && macd < macdSignal && stoch.k > 30 && rsi > 35) {
-    tradeType = "SHORT";
+    tradeType = "LONG";
     confidence = 67;
-    signalStrength = 7;
   }
-  // WEAK SIGNALS
-  else if (rsi < 40) {
+  // WEAK SIGNALS (INVERTED: RSI extremes)
+  else if (rsi > 70) {
+    tradeType = "SHORT";
+    confidence = 60;
+  } 
+  else if (rsi < 30) {
     tradeType = "LONG";
     confidence = 60;
-  } else if (rsi > 60) {
-    tradeType = "SHORT";
-    confidence = 60;
-  } else {
+  } 
+  else {
     tradeType = "LONG";
     confidence = 55;
   }
 
-  // Clamp confidence between 55-80 for this high-precision strategy
   return { 
     confidence: Math.max(55, Math.min(80, confidence)), 
     tradeType 
