@@ -24,6 +24,8 @@ export const strategies = pgTable("strategies", {
   totalTrades: integer("total_trades").notNull().default(0),
   profitFactor: decimal("profit_factor", { precision: 5, scale: 2 }).notNull().default("0"),
   maxDrawdown: decimal("max_drawdown", { precision: 5, scale: 2 }).notNull().default("0"),
+  minLeverage: integer("min_leverage").notNull().default(1),
+  maxLeverage: integer("max_leverage").notNull().default(10),
 });
 
 export const signals = pgTable("signals", {

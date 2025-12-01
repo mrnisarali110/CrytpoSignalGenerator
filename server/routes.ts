@@ -58,7 +58,9 @@ async function ensureDemoUser() {
         active: true,
         totalTrades: 142,
         profitFactor: "2.1",
-        maxDrawdown: "4.5"
+        maxDrawdown: "4.5",
+        minLeverage: 6,
+        maxLeverage: 10
       },
       {
         userId: user.id,
@@ -70,7 +72,9 @@ async function ensureDemoUser() {
         active: true,
         totalTrades: 24,
         profitFactor: "3.8",
-        maxDrawdown: "1.2"
+        maxDrawdown: "1.2",
+        minLeverage: 2,
+        maxLeverage: 5
       },
       {
         userId: user.id,
@@ -82,7 +86,9 @@ async function ensureDemoUser() {
         active: false,
         totalTrades: 12,
         profitFactor: "1.5",
-        maxDrawdown: "8.2"
+        maxDrawdown: "8.2",
+        minLeverage: 2,
+        maxLeverage: 4
       }
     ];
 
@@ -413,11 +419,23 @@ export async function registerRoutes(
           ? entry * (1 - 0.03)
           : entry * (1 + 0.03);
 
-        // Calculate leverage based on confidence and risk settings
-        // Higher confidence = higher leverage for account growth
+        // Calculate leverage using strategy-specific range or global max leverage
         const userSettings = await storage.getSettings(req.session?.userId || DEMO_USER_ID);
-        const maxAllowedLeverage = userSettings?.maxLeverage || 10;
-        const leverage = Math.min(maxAllowedLeverage, Math.max(1, Math.round(1 + (confidence - 50) * 0.18)));
+        const globalMaxLeverage = userSettings?.maxLeverage || 10;
+        
+        let leverage: number;
+        if (selectedStrategy) {
+          // Use strategy-specific leverage range based on confidence
+          const strategyMinLeverage = selectedStrategy.minLeverage || 1;
+          const strategyMaxLeverage = Math.min(selectedStrategy.maxLeverage || 10, globalMaxLeverage);
+          const confidenceRatio = (confidence - 50) / 50; // -1 to 1 scale
+          const leverageRange = strategyMaxLeverage - strategyMinLeverage;
+          leverage = Math.round(strategyMinLeverage + (leverageRange * (1 + confidenceRatio) / 2));
+          leverage = Math.max(strategyMinLeverage, Math.min(strategyMaxLeverage, leverage));
+        } else {
+          // Fallback to confidence-based leverage if no strategy
+          leverage = Math.min(globalMaxLeverage, Math.max(1, Math.round(1 + (confidence - 50) * 0.18)));
+        }
 
         const signal = await storage.createSignal({
           userId: req.session?.userId || DEMO_USER_ID,

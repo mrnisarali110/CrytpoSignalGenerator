@@ -9,14 +9,18 @@ import { Activity, TrendingUp, Clock, AlertCircle } from "lucide-react";
 import { useStrategies, useUpdateStrategy } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
 
-const getLeverageRange = (risk: string): { min: number; max: number } => {
-  switch (risk) {
+const getLeverageRange = (strategy: any): { min: number; max: number } => {
+  if (strategy.minLeverage && strategy.maxLeverage) {
+    return { min: strategy.minLeverage, max: strategy.maxLeverage };
+  }
+  // Fallback to risk-based defaults
+  switch (strategy.risk) {
     case "High":
       return { min: 6, max: 10 };
     case "Med":
-      return { min: 4, max: 7 };
+      return { min: 2, max: 4 };
     case "Low":
-      return { min: 1, max: 3 };
+      return { min: 2, max: 5 };
     default:
       return { min: 1, max: 5 };
   }
@@ -140,7 +144,7 @@ export function StrategiesView() {
                       {strategy.risk} Risk
                     </Badge>
                     <Badge variant="outline" className="text-xs text-yellow-500 border-yellow-500/30 font-mono">
-                      {getLeverageRange(strategy.risk).min}x - {getLeverageRange(strategy.risk).max}x
+                      {getLeverageRange(strategy).min}x - {getLeverageRange(strategy).max}x Leverage
                     </Badge>
                   </div>
                   <CardDescription className="text-xs sm:text-sm">{strategy.description}</CardDescription>
