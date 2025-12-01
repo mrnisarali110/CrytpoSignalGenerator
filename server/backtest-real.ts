@@ -96,8 +96,8 @@ export async function runRealBacktest(
     // Generate signal using real strategy algorithm
     const { confidence, tradeType } = strategyAlgorithm(priceHistory);
 
-    // Entry logic: Enter if no open trade and confidence is high enough
-    if (!openTrade && confidence > 62) {
+    // Entry logic: Enter if no open trade and confidence is high enough (stricter threshold for better signals)
+    if (!openTrade && confidence > 68) {
       openTrade = {
         entryPrice: currentPrice,
         entryDate: new Date(Date.now() - (prices.length - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

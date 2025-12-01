@@ -1,5 +1,5 @@
-// MACD + Bollinger Bands + RSI Strategy - Higher accuracy for crypto
-// Typical accuracy: 75-80% on crypto markets
+// MACD + Bollinger Bands + RSI Strategy - OPTIMIZED for Sentiment AI
+// Increased selectivity for higher win rate accuracy
 
 export interface StrategyResults {
   confidence: number;
@@ -61,6 +61,17 @@ function calculateBollingerBands(prices: number[], period: number = 20): { upper
   };
 }
 
+// Calculate trend strength - measure how strong the price move is
+function calculateTrendStrength(prices: number[]): number {
+  if (prices.length < 10) return 50;
+  const recent = prices.slice(-10);
+  const highest = Math.max(...recent);
+  const lowest = Math.min(...recent);
+  const range = highest - lowest;
+  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  return Math.min(100, Math.max(0, (range / avg) * 100));
+}
+
 export function analyzeSignal(prices: number[]): StrategyResults {
   if (prices.length < 30) {
     return { confidence: 55, tradeType: "LONG" };
@@ -70,6 +81,7 @@ export function analyzeSignal(prices: number[]): StrategyResults {
   const { macd, signal, histogram } = calculateMACD(prices);
   const bollingerBands = calculateBollingerBands(prices);
   const currentPrice = prices[prices.length - 1];
+  const trendStrength = calculateTrendStrength(prices);
 
   let confidence = 0;
   let tradeType: "LONG" | "SHORT" = "LONG";
@@ -78,47 +90,57 @@ export function analyzeSignal(prices: number[]): StrategyResults {
   const macdBullish = macd > signal && histogram > 0;
   // MACD Bearish: MACD < Signal and negative histogram
   const macdBearish = macd < signal && histogram < 0;
+  
+  // Histogram strength check (stronger signals)
+  const histogramStrength = Math.abs(histogram) > 0.01;
 
   // Bollinger Bands: Price near bands
   const priceNearLower = currentPrice <= bollingerBands.lower * 1.05;
   const priceNearUpper = currentPrice >= bollingerBands.upper * 0.95;
 
-  // Combined strategy: MACD + Bollinger Bands + RSI
-  if (macdBullish && priceNearLower && rsi < 70) {
-    // Strong BUY: MACD bullish + price near lower band + not overbought
+  // OPTIMIZED CONDITIONS - More selective to reduce false signals
+  
+  // STRONG BUY: All signals aligned + TIGHT RSI
+  if (macdBullish && histogramStrength && priceNearLower && rsi < 45 && trendStrength > 40) {
     tradeType = "LONG";
     confidence = 78;
-  } else if (macdBullish && rsi < 50) {
-    // BUY: MACD bullish + not overbought
+  } 
+  // BUY: MACD bullish + moderate RSI
+  else if (macdBullish && histogramStrength && rsi < 40) {
+    tradeType = "LONG";
+    confidence = 74;
+  }
+  // BUY: Price at lower band + strong uptrend
+  else if (priceNearLower && macdBullish && rsi < 50) {
     tradeType = "LONG";
     confidence = 70;
-  } else if (macdBearish && priceNearUpper && rsi > 30) {
-    // Strong SELL: MACD bearish + price near upper band + not oversold
+  }
+  // STRONG SELL: All signals aligned + TIGHT RSI
+  else if (macdBearish && histogramStrength && priceNearUpper && rsi > 55 && trendStrength > 40) {
     tradeType = "SHORT";
     confidence = 77;
-  } else if (macdBearish && rsi > 50) {
-    // SELL: MACD bearish + not oversold
+  }
+  // SELL: MACD bearish + moderate RSI
+  else if (macdBearish && histogramStrength && rsi > 60) {
     tradeType = "SHORT";
-    confidence = 69;
-  } else if (macdBullish) {
-    // Weak BUY
-    tradeType = "LONG";
-    confidence = 60;
-  } else if (macdBearish) {
-    // Weak SELL
+    confidence = 74;
+  }
+  // SELL: Price at upper band + strong downtrend
+  else if (priceNearUpper && macdBearish && rsi > 50) {
     tradeType = "SHORT";
-    confidence = 59;
-  } else if (rsi < 30) {
-    // Oversold
+    confidence = 70;
+  }
+  // Weak signals - only on strong oversold/overbought
+  else if (rsi < 25 && macdBullish) {
     tradeType = "LONG";
-    confidence = 58;
-  } else if (rsi > 70) {
-    // Overbought
+    confidence = 65;
+  }
+  else if (rsi > 75 && macdBearish) {
     tradeType = "SHORT";
-    confidence = 57;
-  } else {
-    // Neutral
-    tradeType = "LONG";
+    confidence = 65;
+  }
+  else {
+    // No clear signal
     confidence = 55;
   }
 
