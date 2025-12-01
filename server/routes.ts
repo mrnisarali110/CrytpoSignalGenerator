@@ -604,9 +604,9 @@ export async function registerRoutes(
         count: strategies.length, 
         results,
         summary: {
-          backtestType: "REAL - 365 days of actual CoinGecko historical data",
+          backtestType: "REAL - 180 days of current 2025 CoinGecko data",
           initialBalance: 100,
-          dataSource: "CoinGecko",
+          dataSource: "CoinGecko (Last 6 months - mostly 2025)",
           timestamp: new Date().toISOString()
         }
       });

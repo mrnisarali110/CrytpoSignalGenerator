@@ -31,7 +31,7 @@ interface TradeRecord {
   profitLoss: number;
 }
 
-async function fetchHistoricalData(cryptoId: string, days: number = 365): Promise<number[]> {
+async function fetchHistoricalData(cryptoId: string, days: number = 180): Promise<number[]> {
   try {
     const res = await fetch(
       `https://api.coingecko.com/api/v3/coins/${cryptoId}/market_chart?vs_currency=usd&days=${days}&interval=daily`
@@ -63,8 +63,8 @@ export async function runRealBacktest(
   let totalLossAmount = 0;
   const trades: TradeRecord[] = [];
 
-  // Fetch 365 days of real historical data
-  const prices = await fetchHistoricalData(cryptoId, 365);
+  // Fetch 180 days of real historical data (6 months - mostly 2025 data)
+  const prices = await fetchHistoricalData(cryptoId, 180);
   
   if (prices.length < 50) {
     console.warn(`Not enough price data for ${cryptoId}, got ${prices.length} days`);
