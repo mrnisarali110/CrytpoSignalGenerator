@@ -5,6 +5,7 @@ import { insertSignalSchema, insertStrategySchema, insertSettingsSchema, insertB
 import { fromZodError } from "zod-validation-error";
 import { analyzeSignal } from "./strategy-macd";
 import { analyzeSignal as analyzeSignalWinOrDie } from "./strategy-winordie";
+import { analyzeSignal as analyzeSignalGPT } from "./strategy-gpt";
 import { runRealBacktest } from "./backtest-real";
 
 // Middleware to check if user is authenticated
@@ -558,7 +559,8 @@ export async function registerRoutes(
         "Micro-Scalp v2": { cryptoId: "bitcoin", algorithm: analyzeSignal },
         "Trend Master": { cryptoId: "ethereum", algorithm: analyzeSignal },
         "Sentiment AI": { cryptoId: "solana", algorithm: analyzeSignal },
-        "WIN OR DIE": { cryptoId: "dogecoin", algorithm: analyzeSignalWinOrDie }
+        "WIN OR DIE": { cryptoId: "dogecoin", algorithm: analyzeSignalWinOrDie },
+        "GPT-Strategy": { cryptoId: "ripple", algorithm: analyzeSignalGPT }
       };
 
       for (const strategy of strategies) {
