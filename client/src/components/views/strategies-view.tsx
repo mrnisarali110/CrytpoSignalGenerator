@@ -16,6 +16,8 @@ const getLeverageRange = (strategy: any): { min: number; max: number } => {
   }
   // Fallback to risk-based defaults
   switch (strategy.risk) {
+    case "Extreme":
+      return { min: 10, max: 30 };
     case "High":
       return { min: 6, max: 10 };
     case "Med":
@@ -139,6 +141,7 @@ export function StrategiesView() {
                       {strategy.active ? "ACTIVE" : "PAUSED"}
                     </Badge>
                     <Badge variant="outline" className={`text-xs ${
+                      strategy.risk === "Extreme" ? "text-red-600 border-red-600/50 bg-red-950/30 font-bold" :
                       strategy.risk === "High" ? "text-red-400 border-red-400/30" :
                       strategy.risk === "Med" ? "text-yellow-400 border-yellow-400/30" :
                       "text-green-400 border-green-400/30"

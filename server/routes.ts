@@ -249,7 +249,8 @@ export async function registerRoutes(
       const strategyPools = {
         "High": ["BTC/USDT", "ETH/USDT", "SOL/USDT", "DOGE/USDT", "AVAX/USDT"], // High volatility coins
         "Low": ["BTC/USDT", "ETH/USDT", "BNB/USDT", "LINK/USDT", "ADA/USDT"], // Stable, large cap coins
-        "Med": ["SOL/USDT", "AVAX/USDT", "MATIC/USDT", "ARB/USDT", "OP/USDT"] // Medium volatility
+        "Med": ["SOL/USDT", "AVAX/USDT", "MATIC/USDT", "ARB/USDT", "OP/USDT"], // Medium volatility
+        "Extreme": ["BTC/USDT", "ETH/USDT", "SOL/USDT", "DOGE/USDT", "AVAX/USDT", "XRP/USDT"] // Ultra volatile coins for high-leverage trades
       };
       
       let selectedStrategy = null;
