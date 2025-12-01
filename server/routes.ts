@@ -5,7 +5,7 @@ import { insertSignalSchema, insertStrategySchema, insertSettingsSchema, insertB
 import { fromZodError } from "zod-validation-error";
 import { analyzeSignal } from "./strategy-macd";
 import { analyzeSignal as analyzeSignalWinOrDie } from "./strategy-winordie";
-import { simulateStrategyBacktest } from "./backtest";
+import { runRealBacktest } from "./backtest-real";
 
 // Middleware to check if user is authenticated
 function requireAuth(req: Request, res: Response, next: any) {
@@ -553,16 +553,38 @@ export async function registerRoutes(
       const settings = await storage.getSettings(req.session!.userId);
       const results = [];
 
+      // Map strategies to their test coins and algorithms
+      const strategyConfig: { [key: string]: { cryptoId: string; algorithm: any } } = {
+        "Micro-Scalp v2": { cryptoId: "bitcoin", algorithm: analyzeSignal },
+        "Trend Master": { cryptoId: "ethereum", algorithm: analyzeSignal },
+        "Sentiment AI": { cryptoId: "solana", algorithm: analyzeSignal },
+        "WIN OR DIE": { cryptoId: "dogecoin", algorithm: analyzeSignalWinOrDie }
+      };
+
       for (const strategy of strategies) {
-        // Simulate 100 trades with strategy's leverage and risk settings
-        const leverage = Math.min(parseInt(strategy.risk === "High" ? "8" : strategy.risk === "Med" ? "5" : "3"), settings?.maxLeverage || 10);
-        const riskPerTrade = parseFloat(settings?.riskPerTrade || "2.0");
+        // Get leverage based on risk level
+        const leverage = Math.min(
+          parseInt(strategy.risk === "Extreme" ? "15" : strategy.risk === "High" ? "8" : strategy.risk === "Med" ? "5" : "3"),
+          settings?.maxLeverage || 30
+        );
+        const riskPerTrade = parseFloat(settings?.riskPerTrade || "10");
 
-        const backtestMetrics = simulateStrategyBacktest(strategy.winRate, leverage, riskPerTrade);
+        // Get strategy config for real backtesting
+        const config = strategyConfig[strategy.name] || { cryptoId: "bitcoin", algorithm: analyzeSignal };
 
-        // Update strategy with backtest results
+        // Run REAL backtest with 365 days of actual price history
+        const backtestMetrics = await runRealBacktest(
+          strategy.name,
+          strategy.winRate,
+          config.cryptoId,
+          config.algorithm,
+          leverage,
+          riskPerTrade
+        );
+
+        // Update strategy with real backtest results
         await storage.updateStrategy(strategy.id, {
-          winRate: backtestMetrics.winRate,
+          winRate: Math.round(backtestMetrics.winRate),
           totalTrades: backtestMetrics.totalTrades,
           profitFactor: backtestMetrics.profitFactor.toString(),
           maxDrawdown: backtestMetrics.maxDrawdown.toString(),
@@ -582,12 +604,14 @@ export async function registerRoutes(
         count: strategies.length, 
         results,
         summary: {
+          backtestType: "REAL - 365 days of actual CoinGecko historical data",
           initialBalance: 100,
-          tradesPerStrategy: 100,
+          dataSource: "CoinGecko",
           timestamp: new Date().toISOString()
         }
       });
     } catch (error: any) {
+      console.error("Backtest error:", error);
       res.status(500).json({ error: error.message });
     }
   });
